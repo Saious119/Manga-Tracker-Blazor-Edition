@@ -1,0 +1,54 @@
+﻿@page "/"
+
+<PageTitle>Manga Tracker</PageTitle>
+
+@using MangaTracker_Temp.Services
+@using MangaTracker_Temp.ViewModel
+@using MangaTracker_Temp.Model
+@using MongoDB;
+
+@inject MangaService MS;
+
+<h1>Manga Tracker</h1>
+
+<p>If your data doesn't load immediately, please wait a few minutes</p>
+
+@if (manga == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+           <tr> 
+                <th>Name</th>
+                <th>Author</th>
+                <th>Volumes Read</th>
+                <th>Number of Total Volumes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var m in manga)
+            {
+                <tr>
+                    <td>@m[1]</td>
+                    <td>@m[2]</td>
+                    <td>@m[4]</td>
+                    <td>@m[3]</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private MongoDB.Bson.BsonDocument[]? manga;
+    private List<MongoDB.Bson.BsonDocument> mangaList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        mangaList = await MS.GetMangaAsync();
+        manga = mangaList.ToArray();
+    }
+}
