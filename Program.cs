@@ -1,5 +1,6 @@
 using MangaTracker_Temp.Areas.Identity;
 using MangaTracker_Temp.Services;
+using MangaTracker_Temp.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
@@ -11,11 +12,42 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
 builder.Services.AddSingleton<MangaService>();
+
+//other auth providers
+
+builder.Services.AddAuthentication()
+    .AddDiscord(options =>
+    {
+        options.ClientId = "fsdfsdjklfjsdkljfkls";
+        options.ClientSecret = "fjkhdfjkhjksd";
+    });
+   /*.AddGoogle(options =>
+   {
+       IConfigurationSection googleAuthNSection =
+       config.GetSection("Authentication:Google");
+       options.ClientId = googleAuthNSection["ClientId"];
+       options.ClientSecret = googleAuthNSection["ClientSecret"];
+   })
+   .AddMicrosoftAccount(microsoftOptions =>
+   {
+       microsoftOptions.ClientId = config["Authentication:Microsoft:ClientId"];
+       microsoftOptions.ClientSecret = config["Authentication:Microsoft:ClientSecret"];
+   })
+   .AddTwitter(twitterOptions =>
+   {
+       twitterOptions.ConsumerKey = config["Authentication:Twitter:ConsumerAPIKey"];
+       twitterOptions.ConsumerSecret = config["Authentication:Twitter:ConsumerSecret"];
+       twitterOptions.RetrieveUserDetails = true;
+   });*/
 
 var app = builder.Build();
 

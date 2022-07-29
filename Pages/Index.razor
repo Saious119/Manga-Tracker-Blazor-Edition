@@ -12,6 +12,17 @@
 <h1>Manga Tracker</h1>
 
 <p>If your data doesn't load immediately, please wait a few minutes</p>
+<button @onclick="AddManga" class="btn btn-primary">Add Manga</button>
+@if(IsFormVisible)
+{
+    <EditForm Model="@M" OnValidSubmit="@HandleSubmit">
+        <InputText id="Name" @bind-Value="M.Name" class="form-control form-control-sm"/>
+        <InputText id="Author" @bind-Value="M.Author" class="form-control form-control-sm"/>
+        <InputText id="numRead" @bind-Value="M.numRead" class="form-control form-control-sm"/>
+        <InputText id="numVolumes" @bind-Value="M.numVolumes" class="form-control form-control-sm"/>
+        <input type="submit" class="btn btn-primary" value="Save"/>
+    </EditForm>
+}
 
 @if (manga == null)
 {
@@ -26,6 +37,7 @@ else
                 <th>Author</th>
                 <th>Volumes Read</th>
                 <th>Number of Total Volumes</th>
+                <th>Completion %</th>
             </tr>
         </thead>
         <tbody>
@@ -36,6 +48,8 @@ else
                     <td>@m[2]</td>
                     <td>@m[4]</td>
                     <td>@m[3]</td>
+                    <td>@MS.CalcCompletion(m[4].ToInt32(), m[3].ToInt32())</td>
+                    <td><button @onclick="() => RemoveManga(m[1].ToString())" class="btn btn-primary">Delete</button></td>
                 </tr>
             }
         </tbody>
@@ -43,6 +57,7 @@ else
 }
 
 @code {
+    private Manga M { get; set; } = new Manga();
     private MongoDB.Bson.BsonDocument[]? manga;
     private List<MongoDB.Bson.BsonDocument> mangaList;
 
@@ -50,5 +65,32 @@ else
     {
         mangaList = await MS.GetMangaAsync();
         manga = mangaList.ToArray();
+        base.OnInitialized();
+        var timer = new System.Threading.Timer((_) =>
+        {
+            InvokeAsync(async () =>
+            {
+                StateHasChanged();
+            });
+        }, null, 0, 1000);
+    }
+    bool IsFormVisible = false;
+    private void AddManga()
+    {
+        IsFormVisible = true;
+        StateHasChanged();
+        //cry more
+    }
+    private void HandleSubmit()
+    {
+        Console.WriteLine("adding to DB");
+        Console.WriteLine("{0}, {1}, {2}, {3}", M.Name, M.Author, M.numRead, M.numVolumes);
+        MS.AddMangaToDB(M);
+        StateHasChanged();
+    }
+    private async void RemoveManga(string name){
+        Console.WriteLine("Deleting: {0}", name);
+        await MS.RemoveManga(name);
+        StateHasChanged();
     }
 }
