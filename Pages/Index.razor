@@ -10,6 +10,7 @@
 @using Newtonsoft.Json.Bson;
 @using Newtonsoft.Json;
 
+@inject NavigationManager uriHelper;
 @inject MangaService MS;
 
 <h1>Manga Tracker</h1>
@@ -104,11 +105,13 @@ else
         Console.WriteLine("adding to DB");
         Console.WriteLine("{0}, {1}, {2}, {3}", M.Name, M.Author, M.numRead, M.numVolumes);
         MS.AddMangaToDB(M);
+        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         StateHasChanged();
     }
     private async void RemoveManga(string name){
         Console.WriteLine("Deleting: {0}", name);
         await MS.RemoveManga(name);
+        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         StateHasChanged();
     }
     bool isUpdateFormVisible = false;
@@ -121,6 +124,7 @@ else
     {
         MS.UpdateManga(M);
         Console.WriteLine("Finished updating {0}", M.Name);
+        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         StateHasChanged();
     }
     private string AvgCalc() => MS.AvgCalc();
