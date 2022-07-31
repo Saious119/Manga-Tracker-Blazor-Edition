@@ -27,8 +27,8 @@ builder.Services.AddSingleton<MangaService>();
 builder.Services.AddAuthentication()
     .AddDiscord(options =>
     {
-        options.ClientId = "fsdfsdjklfjsdkljfkls";
-        options.ClientSecret = "fjkhdfjkhjksd";
+        options.ClientId = "retjklrjl";
+        options.ClientSecret = "retjljlrjtlkret";
     });
    /*.AddGoogle(options =>
    {
