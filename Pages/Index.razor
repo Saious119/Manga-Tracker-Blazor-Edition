@@ -6,6 +6,9 @@
 @using MangaTracker_Temp.ViewModel
 @using MangaTracker_Temp.Model
 @using MongoDB;
+@using MongoDB.Bson.Serialization;
+@using Newtonsoft.Json.Bson;
+@using Newtonsoft.Json;
 
 @inject MangaService MS;
 
@@ -50,14 +53,29 @@ else
                     <td>@m[3]</td>
                     <td>@MS.CalcCompletion(m[4].ToInt32(), m[3].ToInt32())</td>
                     <td><button @onclick="() => RemoveManga(m[1].ToString())" class="btn btn-primary">Delete</button></td>
+                    <td><button @onclick="UpdateManga" class="btn btn-primary">Edit</button>
+                    @if (isUpdateFormVisible)
+                    {
+                        <br>
+                        <EditForm Model="@M" OnValidSubmit="@HandleUpdate">
+                            <InputText placeholder="@m[1]" id="Name" @bind-Value="M.Name" class="form-control form-control-sm"/>
+                            <InputText placeholder="@m[2]" id="Author" @bind-Value="M.Author" class="form-control form-control-sm"/>
+                            <InputText placeholder="@m[4]" id="numRead" @bind-Value="M.numRead" class="form-control form-control-sm"/>
+                            <InputText placeholder="@m[3]" id="numVolumes" @bind-Value="M.numVolumes" class="form-control form-control-sm"/>
+                            <input type="submit" class="btn btn-primary" value="Update"/>
+                        </EditForm>
+                    }
+                    </td>
                 </tr>
             }
         </tbody>
+        <p><strong>Total Percentage Read: @MS.AvgCalc() %</strong></p>
     </table>
 }
 
 @code {
     private Manga M { get; set; } = new Manga();
+    private Manga m { get; set; } = new Manga();
     private MongoDB.Bson.BsonDocument[]? manga;
     private List<MongoDB.Bson.BsonDocument> mangaList;
 
@@ -93,4 +111,17 @@ else
         await MS.RemoveManga(name);
         StateHasChanged();
     }
+    bool isUpdateFormVisible = false;
+    private async void UpdateManga()
+    {
+        isUpdateFormVisible = true;
+        StateHasChanged();
+    }
+    private void HandleUpdate()
+    {
+        MS.UpdateManga(M);
+        Console.WriteLine("Finished updating {0}", M.Name);
+        StateHasChanged();
+    }
+    private string AvgCalc() => MS.AvgCalc();
 }

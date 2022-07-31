@@ -13,6 +13,7 @@ namespace MangaTracker_Temp.Services
     public class MangaService
     {
         List<Manga> mangaList = new List<Manga>();
+        List<int> avgs = new List<int>(); 
         public async Task<List<Manga>> GetManga()
         {
             return mangaList;
@@ -27,7 +28,7 @@ namespace MangaTracker_Temp.Services
             var database = client.GetDatabase("MangaDB");
             var collection = database.GetCollection<BsonDocument>("Manga");
             var documents = collection.Find(new BsonDocument()).ToList();
-            foreach(BsonDocument doc in documents)
+            foreach (BsonDocument doc in documents)
             {
                 Console.WriteLine(doc.ToString());
             }
@@ -61,7 +62,7 @@ namespace MangaTracker_Temp.Services
                 var newDoc = newManga.ToBsonDocument();
                 collection.InsertOne(newDoc);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e);
             }
@@ -78,11 +79,42 @@ namespace MangaTracker_Temp.Services
                 var deleteFilter = Builders<BsonDocument>.Filter.Eq("Name", nameToFind);
                 collection.DeleteOne(deleteFilter);
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+        public async Task UpdateManga(Manga mangaToUpdate)
+        {
+            try
+            {
+                await RemoveManga(mangaToUpdate.Name);
+                await AddMangaToDB(mangaToUpdate);
+            }
             catch(Exception e)
             {
                 Console.WriteLine(e);
             }
         }
-        public string CalcCompletion(int numRead, int numVolumes) { return (Math.Truncate(((double)numRead / (double)numVolumes)*100)).ToString(); }
+        public string CalcCompletion(int numRead, int numVolumes) 
+        {
+            var val = Math.Truncate(((double)numRead / (double)numVolumes) * 100).ToString();
+            if(val == null)
+            {
+                return "NaN";
+            }
+            avgs.Add(Int32.Parse(val));
+            return val.ToString();
+        }
+        public string AvgCalc()
+        {
+            int total = 0;
+            foreach(var item in avgs)
+            {
+                total += item;
+            }
+            total = total / avgs.Count();
+            return total.ToString();
+        }
     }
 }
