@@ -106,12 +106,14 @@ else
         Console.WriteLine("{0}, {1}, {2}, {3}", M.Name, M.Author, M.numRead, M.numVolumes);
         MS.AddMangaToDB(M);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        AvgCalc();
         StateHasChanged();
     }
     private async void RemoveManga(string name){
         Console.WriteLine("Deleting: {0}", name);
         await MS.RemoveManga(name);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        AvgCalc();
         StateHasChanged();
     }
     bool isUpdateFormVisible = false;
@@ -125,6 +127,7 @@ else
         MS.UpdateManga(M);
         Console.WriteLine("Finished updating {0}", M.Name);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        AvgCalc();
         StateHasChanged();
     }
     private string AvgCalc() => MS.AvgCalc();
