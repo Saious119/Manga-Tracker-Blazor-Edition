@@ -1,14 +1,12 @@
-using MangaTracker_Temp.Areas.Identity;
 using MangaTracker_Temp.Services;
 using MangaTracker_Temp.Data;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using WebPWrecover.Services;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -19,36 +17,20 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
 builder.Services.AddSingleton<MangaService>();
-
+builder.Services.AddHttpContextAccessor();
 //other auth providers
 
 builder.Services.AddAuthentication()
-    .AddDiscord(options =>
-    {
-        options.ClientId = "retjklrjl";
-        options.ClientSecret = "retjljlrjtlkret";
-    });
-   /*.AddGoogle(options =>
+   .AddGoogle(options =>
    {
        IConfigurationSection googleAuthNSection =
        config.GetSection("Authentication:Google");
        options.ClientId = googleAuthNSection["ClientId"];
        options.ClientSecret = googleAuthNSection["ClientSecret"];
-   })
-   .AddMicrosoftAccount(microsoftOptions =>
-   {
-       microsoftOptions.ClientId = config["Authentication:Microsoft:ClientId"];
-       microsoftOptions.ClientSecret = config["Authentication:Microsoft:ClientSecret"];
-   })
-   .AddTwitter(twitterOptions =>
-   {
-       twitterOptions.ConsumerKey = config["Authentication:Twitter:ConsumerAPIKey"];
-       twitterOptions.ConsumerSecret = config["Authentication:Twitter:ConsumerSecret"];
-       twitterOptions.RetrieveUserDetails = true;
-   });*/
-
+   });
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
