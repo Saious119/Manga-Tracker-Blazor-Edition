@@ -83,13 +83,14 @@ else
     private Manga m { get; set; } = new Manga();
     private MongoDB.Bson.BsonDocument[]? manga;
     private List<MongoDB.Bson.BsonDocument> mangaList;
+    private string user;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();  
-        var user = authState.User;
+        user = authState.User.Identity.Name;
         Console.WriteLine("http struf: {0} done", user);
-        mangaList = await MS.GetMangaAsync();
+        mangaList = await MS.GetMangaAsync(user);
         manga = mangaList.ToArray();
         base.OnInitialized();
         var timer = new System.Threading.Timer((_) =>
@@ -111,14 +112,14 @@ else
     {
         Console.WriteLine("adding to DB");
         Console.WriteLine("{0}, {1}, {2}, {3}", M.Name, M.Author, M.numRead, M.numVolumes);
-        MS.AddMangaToDB(M);
+        MS.AddMangaToDB(M, user);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         AvgCalc();
         StateHasChanged();
     }
     private async void RemoveManga(string name){
         Console.WriteLine("Deleting: {0}", name);
-        await MS.RemoveManga(name);
+        await MS.RemoveManga(name, user);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         AvgCalc();
         StateHasChanged();
@@ -131,7 +132,7 @@ else
     }
     private void HandleUpdate()
     {
-        MS.UpdateManga(M);
+        MS.UpdateManga(M, user);
         Console.WriteLine("Finished updating {0}", M.Name);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         AvgCalc();
