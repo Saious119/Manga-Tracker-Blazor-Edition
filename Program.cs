@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using WebPWrecover.Services;
 using Microsoft.AspNetCore.Identity;
+using ElectronNET.API;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -31,6 +33,7 @@ builder.Services.AddAuthentication()
    });
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
+builder.Services.AddElectron();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -57,5 +60,4 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-
 app.Run();
