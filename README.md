@@ -15,4 +15,4 @@ just cd into the folder and use ```dotnet run``` and it should build and run, fi
 
 ## Warning for Add manga forms
 There are currently no labels (sorry about that)
-the order for what goes in what box is <Name of Manga> <Author> <Volumes read> <total volumes owned or read> 
+the order for what goes in what box is: Name of Manga, Author, Volumes read, total volumes owned or read. 
