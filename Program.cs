@@ -5,8 +5,18 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using WebPWrecover.Services;
 using Microsoft.AspNetCore.Identity;
 using ElectronNET.API;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Identity.Web;
+using Microsoft.Identity.Web.UI;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//var keyVaultEndpoint = new Uri(Environment.GetEnvironmentVariable("VaultUri"));
+//builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
 var config = builder.Configuration;
 
 
@@ -17,12 +27,31 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
+/*
+var initialScopes = builder.Configuration["DownstreamApi:Scopes"]?.Split(' ') ?? builder.Configuration["MicrosoftGraph:Scopes"]?.Split(' ');
+
+builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+.AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))
+        .EnableTokenAcquisitionToCallDownstreamApi(initialScopes)
+.AddMicrosoftGraph(builder.Configuration.GetSection("MicrosoftGraph"))
+            .AddInMemoryTokenCaches();
+
+builder.Services.AddControllersWithViews()
+.AddMicrosoftIdentityUI();
+
+builder.Services.AddAuthorization(options =>
+
+{
+    options.FallbackPolicy = options.DefaultPolicy;
+});
+*/
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+//    .AddMicrosoftIdentityConsentHandler();
 builder.Services.AddSingleton<MangaService>();
 builder.Services.AddHttpContextAccessor();
 //other auth providers
-
+/*
 builder.Services.AddAuthentication()
    .AddGoogle(options =>
    {
@@ -31,9 +60,11 @@ builder.Services.AddAuthentication()
        options.ClientId = googleAuthNSection["ClientId"];
        options.ClientSecret = googleAuthNSection["ClientSecret"];
    });
+*/
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 builder.Services.AddElectron();
+builder.Services.AddLogging();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

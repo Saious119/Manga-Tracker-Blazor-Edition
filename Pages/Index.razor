@@ -74,7 +74,7 @@ else
                 </tr>
             }
         </tbody>
-        <p><strong>Total Percentage Read: @MS.AvgCalc() %</strong></p>
+        <p><button @onclick="() => RefreshAvgCalc()" class="btn btn-primary">Refresh</button><strong>Total Percentage Read: @MS.AvgCalc() %</strong></p>
     </table>
 }
 
@@ -140,4 +140,10 @@ else
         StateHasChanged();
     }
     private string AvgCalc() => MS.AvgCalc();
+    private void RefreshAvgCalc()
+    {
+        string result = MS.AvgCalc();
+        Console.WriteLine("new avg = {0}", result);
+        StateHasChanged();
+    }
 }
