@@ -56,7 +56,9 @@
                 var user = await _client.Rest.GetGuildUserAsync(guildID, DiscordUserID);
                 var oldName = user.Nickname;
                 oldName = oldName.Split('(')[0];
-                var newName = oldName + " (" + MS.AvgCalc + "%)";
+                Console.WriteLine(oldName);
+                var newName = oldName + " (" + MS.AvgCalc() + "%)";
+                Console.WriteLine(newName);
                 await user.ModifyAsync(p => p.Nickname = newName);
             };
             await _client.StopAsync();
