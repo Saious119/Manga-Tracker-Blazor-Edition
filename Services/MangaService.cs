@@ -22,7 +22,7 @@ namespace MangaTracker_Temp.Services
         {
             //Connect to MongoDB for Data
 
-            var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@mangadb.hrhudi3.mongodb.net/?retryWrites=true&w=majority");
+            var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
             settings.ServerApi = new ServerApi(ServerApiVersion.V1);
             var client = new MongoClient(settings);
             var database = client.GetDatabase("MangaDB");
@@ -41,7 +41,7 @@ namespace MangaTracker_Temp.Services
             }
             //Connect to MongoDB for Data
             Console.WriteLine("here!!");
-            var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@mangadb.hrhudi3.mongodb.net/?retryWrites=true&w=majority");
+            var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
             settings.ServerApi = new ServerApi(ServerApiVersion.V1);
             var client = new MongoClient(settings);
             var database = client.GetDatabase("MangaDB");
@@ -66,7 +66,7 @@ namespace MangaTracker_Temp.Services
         {
             try
             {
-                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@mangadb.hrhudi3.mongodb.net/?retryWrites=true&w=majority");
+                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
                 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
                 var client = new MongoClient(settings);
                 var database = client.GetDatabase("MangaDB");
@@ -84,7 +84,7 @@ namespace MangaTracker_Temp.Services
         {
             try
             {
-                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@mangadb.hrhudi3.mongodb.net/?retryWrites=true&w=majority");
+                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
                 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
                 var client = new MongoClient(settings);
                 var database = client.GetDatabase("MangaDB");
