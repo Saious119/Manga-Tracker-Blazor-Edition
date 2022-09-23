@@ -51,7 +51,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<MangaService>();
 builder.Services.AddHttpContextAccessor();
 //other auth providers
-/*
+
 builder.Services.AddAuthentication()
    .AddGoogle(options =>
    {
@@ -60,7 +60,6 @@ builder.Services.AddAuthentication()
        options.ClientId = googleAuthNSection["ClientId"];
        options.ClientSecret = googleAuthNSection["ClientSecret"];
    });
-*/
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 builder.Services.AddElectron();

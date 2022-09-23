@@ -6,6 +6,7 @@
 @using MangaTracker_Temp.ViewModel
 @using MangaTracker_Temp.Model
 @using MongoDB;
+@using MongoDB.Bson
 @using MongoDB.Bson.Serialization;
 @using Newtonsoft.Json.Bson;
 @using Newtonsoft.Json;
@@ -41,7 +42,7 @@ else
     <table class="table">
         <thead>
            <tr> 
-                <th>Name</th>
+                <th><button @onclick="SortByName" class="btn btn-primary">Name</button></th>
                 <th>Author</th>
                 <th>Volumes Read</th>
                 <th>Number of Total Volumes</th>
@@ -49,7 +50,11 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach(var m in manga)
+            @if(sortByName){
+                List<BsonDocument> mangaL = manga.ToList();
+                mangaL.Sort();
+            }
+            @foreach(var m in mangaL)
             {
                 <tr>
                     <td>@m[1]</td>
@@ -83,6 +88,7 @@ else
     private Manga M { get; set; } = new Manga();
     private Manga m { get; set; } = new Manga();
     private MongoDB.Bson.BsonDocument[]? manga;
+    private List<BsonDocument> mangaL;
     private List<MongoDB.Bson.BsonDocument> mangaList;
     private string user;
 
@@ -93,6 +99,7 @@ else
         Console.WriteLine("http struf: {0} done", user);
         mangaList = await MS.GetMangaAsync(user);
         manga = mangaList.ToArray();
+        mangaL = manga.ToList();
         base.OnInitialized();
         var timer = new System.Threading.Timer((_) =>
         {
@@ -144,6 +151,15 @@ else
     {
         string result = MS.AvgCalc();
         Console.WriteLine("new avg = {0}", result);
+        StateHasChanged();
+    }
+    bool sortByName = false;
+    private void SortByName()
+    {
+        sortByName = true;
+        mangaL.Sort();
+        StateHasChanged();
+        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         StateHasChanged();
     }
 }
