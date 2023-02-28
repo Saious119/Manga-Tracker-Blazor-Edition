@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MongoDB.Driver;
 
 namespace MangaTracker_Temp.Services
 {
@@ -108,6 +109,23 @@ namespace MangaTracker_Temp.Services
             {
                 Console.WriteLine(e);
             }
+        }
+        public IMongoCollection<BsonDocument>? GetCollection(string user)
+        {
+            try
+            {
+                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
+                settings.ServerApi = new ServerApi(ServerApiVersion.V1);
+                var client = new MongoClient(settings);
+                var database = client.GetDatabase("MangaDB");
+                var collection = database.GetCollection<BsonDocument>(user);
+                return collection;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            return null;
         }
         public string CalcCompletion(int numRead, int numVolumes) 
         {

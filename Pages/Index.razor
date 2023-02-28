@@ -50,10 +50,6 @@ else
             </tr>
         </thead>
         <tbody>
-            @if(sortByName){
-                List<BsonDocument> mangaL = manga.ToList();
-                mangaL.Sort();
-            }
             @foreach(var m in mangaL)
             {
                 <tr>
@@ -158,8 +154,7 @@ else
     {
         sortByName = true;
         mangaL.Sort();
-        StateHasChanged();
-        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        mangaL = MS.GetCollection(user).Find(bson => true).SortBy(bson => bson["Name"]).ToList();
         StateHasChanged();
     }
 }

@@ -14,6 +14,7 @@ public class EmailSender : IEmailSender
     {
         Options = optionsAccessor.Value;
         _logger = logger;
+        Options.SendGridKey = "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";
     }
 
     public AuthMessageSenderOptions Options { get; } //Set with Secret Manager.
@@ -32,7 +33,7 @@ public class EmailSender : IEmailSender
         var client = new SendGridClient(apiKey);
         var msg = new SendGridMessage()
         {
-            From = new EmailAddress("andym@fortrash.com", "Password Recovery"),
+            From = new EmailAddress("Joe@contoso.com", "Password Recovery"),
             Subject = subject,
             PlainTextContent = message,
             HtmlContent = message
@@ -43,7 +44,6 @@ public class EmailSender : IEmailSender
         // See https://sendgrid.com/docs/User_Guide/Settings/tracking.html
         msg.SetClickTracking(false, false);
         var response = await client.SendEmailAsync(msg);
-        Console.WriteLine("response from email server {0}", response.StatusCode);
         _logger.LogInformation(response.IsSuccessStatusCode
                                ? $"Email to {toEmail} queued successfully!"
                                : $"Failure Email to {toEmail}");
