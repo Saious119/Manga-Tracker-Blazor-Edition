@@ -43,9 +43,9 @@ else
         <thead>
            <tr> 
                 <th><button @onclick="SortByName" class="btn btn-primary">Name</button></th>
-                <th>Author</th>
-                <th>Volumes Read</th>
-                <th>Number of Total Volumes</th>
+                <th><button @onclick="SortByAuthor" class="btn btn-primary">Author</button></th>
+                <th><button @onclick="SortByNumRead" class="btn btn-primary">Volumes Read</button></th>
+                <th><button @onclick="SortByNumVolumes" class="btn btn-primary">Number of Total Volumes</button></th>
                 <th>Completion %</th>
             </tr>
         </thead>
@@ -53,21 +53,21 @@ else
             @foreach(var m in mangaL)
             {
                 <tr>
-                    <td>@m[1]</td>
-                    <td>@m[2]</td>
-                    <td>@m[4]</td>
-                    <td>@m[3]</td>
-                    <td>@MS.CalcCompletion(m[4].ToInt32(), m[3].ToInt32())</td>
-                    <td><button @onclick="() => RemoveManga(m[1].ToString())" class="btn btn-primary">Delete</button></td>
+                    <td>@m.Name</td>
+                    <td>@m.Author</td>
+                    <td>@m.numRead</td>
+                    <td>@m.numVolumes</td>
+                    <td>@MS.CalcCompletion(Int32.Parse(m.numRead), Int32.Parse(m.numVolumes))</td>
+                    <td><button @onclick="() => RemoveManga(m.Name.ToString())" class="btn btn-primary">Delete</button></td>
                     <td><button @onclick="UpdateManga" class="btn btn-primary">Edit</button>
                     @if (isUpdateFormVisible)
                     {
                         <br>
                         <EditForm Model="@M" OnValidSubmit="@HandleUpdate">
-                            <InputText placeholder="@m[1]" id="Name" @bind-Value="M.Name" class="form-control form-control-sm"/>
-                            <InputText placeholder="@m[2]" id="Author" @bind-Value="M.Author" class="form-control form-control-sm"/>
-                            <InputText placeholder="@m[4]" id="numRead" @bind-Value="M.numRead" class="form-control form-control-sm"/>
-                            <InputText placeholder="@m[3]" id="numVolumes" @bind-Value="M.numVolumes" class="form-control form-control-sm"/>
+                            <InputText placeholder="@m.Name" id="Name" @bind-Value="M.Name" class="form-control form-control-sm"/>
+                            <InputText placeholder="@m.Author" id="Author" @bind-Value="M.Author" class="form-control form-control-sm"/>
+                            <InputText placeholder="@m.numRead" id="numRead" @bind-Value="M.numRead" class="form-control form-control-sm"/>
+                            <InputText placeholder="@m.numVolumes" id="numVolumes" @bind-Value="M.numVolumes" class="form-control form-control-sm"/>
                             <input type="submit" class="btn btn-primary" value="Update"/>
                         </EditForm>
                     }
@@ -83,9 +83,9 @@ else
     //private readonly IHttpContextAccessor _httpContextAccessor;
     private Manga M { get; set; } = new Manga();
     private Manga m { get; set; } = new Manga();
-    private MongoDB.Bson.BsonDocument[]? manga;
-    private List<BsonDocument> mangaL;
-    private List<MongoDB.Bson.BsonDocument> mangaList;
+    private Manga[]? manga;
+    private List<Manga> mangaL;
+    private List<Manga> mangaList;
     private string user;
 
     protected override async Task OnInitializedAsync()
@@ -149,12 +149,32 @@ else
         Console.WriteLine("new avg = {0}", result);
         StateHasChanged();
     }
-    bool sortByName = false;
     private void SortByName()
     {
-        sortByName = true;
-        mangaL.Sort();
-        mangaL = MS.GetCollection(user).Find(bson => true).SortBy(bson => bson["Name"]).ToList();
+        var qc = MS.GetCollection(user).AsQueryable();
+        var q = qc.OrderBy(x => x.Name);
+        mangaL = q.ToList();
+        StateHasChanged();
+    }
+    private void SortByAuthor()
+    {
+        var qc = MS.GetCollection(user).AsQueryable();
+        var q = qc.OrderBy(x => x.Author);
+        mangaL = q.ToList();
+        StateHasChanged();
+    }
+    private void SortByNumVolumes()
+    {
+        var qc = MS.GetCollection(user).AsQueryable();
+        var q = qc.ToList().OrderBy(x => Int32.Parse(x.numVolumes));
+        mangaL = q.ToList();
+        StateHasChanged();
+    }
+    private void SortByNumRead()
+    {
+        var qc = MS.GetCollection(user).AsQueryable();
+        var q = qc.ToList().OrderBy(x => Int32.Parse(x.numRead));
+        mangaL = q.ToList();
         StateHasChanged();
     }
 }

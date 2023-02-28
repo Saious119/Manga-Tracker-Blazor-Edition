@@ -34,7 +34,7 @@ namespace MangaTracker_Temp.Services
                 Console.WriteLine(doc.ToString());
             }*/
         }
-        public async Task<List<BsonDocument>> GetMangaAsync(string user)
+        public async Task<List<Manga>> GetMangaAsync(string user)
         {
             if(user == null)
             {
@@ -46,18 +46,18 @@ namespace MangaTracker_Temp.Services
             settings.ServerApi = new ServerApi(ServerApiVersion.V1);
             var client = new MongoClient(settings);
             var database = client.GetDatabase("MangaDB");
-            IMongoCollection<BsonDocument> collection = null;
+            IMongoCollection<Manga> collection = null;
             Console.WriteLine("checking for user");
-            collection = database.GetCollection<BsonDocument>(user);
+            collection = database.GetCollection<Manga>(user);
             if (collection == null)
             {
                 Console.WriteLine("making new User {0}", user);
                 await database.CreateCollectionAsync(user);
             }
-            collection = database.GetCollection<BsonDocument>(user);
+            collection = database.GetCollection<Manga>(user);
             Console.WriteLine("got collection");
             var documents = collection.Find(new BsonDocument()).ToList();
-            foreach (BsonDocument doc in documents)
+            foreach (Manga doc in documents)
             {
                 Console.WriteLine(doc.ToString());
             }
@@ -110,7 +110,7 @@ namespace MangaTracker_Temp.Services
                 Console.WriteLine(e);
             }
         }
-        public IMongoCollection<BsonDocument>? GetCollection(string user)
+        public IMongoCollection<Manga>? GetCollection(string user)
         {
             try
             {
@@ -118,7 +118,7 @@ namespace MangaTracker_Temp.Services
                 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
                 var client = new MongoClient(settings);
                 var database = client.GetDatabase("MangaDB");
-                var collection = database.GetCollection<BsonDocument>(user);
+                var collection = database.GetCollection<Manga>(user);
                 return collection;
             }
             catch (Exception e)

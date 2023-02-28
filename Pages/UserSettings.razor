@@ -21,8 +21,8 @@
 {
     private Manga M { get; set; } = new Manga();
     private UserModel userModel { get; set; } = new UserModel();
-    private MongoDB.Bson.BsonDocument[]? manga;
-    private List<MongoDB.Bson.BsonDocument> mangaList;
+    private Manga[]? manga;
+    private List<Manga> mangaList;
 
     protected override async Task OnInitializedAsync()
     {
