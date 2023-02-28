@@ -139,17 +139,25 @@ namespace MangaTracker_Temp.Services
         }
         public string AvgCalc()
         {
-            int total = 0;
-            foreach(var item in avgs)
+            try
             {
-                total += item;
+                int total = 0;
+                foreach (var item in avgs)
+                {
+                    total += item;
+                }
+                if (total == 0 || avgs.Count() == 0)
+                {
+                    return string.Empty;
+                }
+                total = total / avgs.Count();
+                return total.ToString();
             }
-            if(total == 0 || avgs.Count() == 0)
+            catch (Exception e)
             {
-                return string.Empty;
+                Console.WriteLine(e);
             }
-            total = total / avgs.Count();
-            return total.ToString();
+            return "0";
         }
     }
 }

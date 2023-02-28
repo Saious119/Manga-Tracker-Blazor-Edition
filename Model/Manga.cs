@@ -20,5 +20,7 @@ namespace MangaTracker_Temp.Model
         public string numVolumes { get; set; }
         [BsonElement("numRead")]
         public string numRead { get; set; }
+
+        public bool isUpdateFormVisible = false;
     }
 }

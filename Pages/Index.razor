@@ -59,8 +59,8 @@ else
                     <td>@m.numVolumes</td>
                     <td>@MS.CalcCompletion(Int32.Parse(m.numRead), Int32.Parse(m.numVolumes))</td>
                     <td><button @onclick="() => RemoveManga(m.Name.ToString())" class="btn btn-primary">Delete</button></td>
-                    <td><button @onclick="UpdateManga" class="btn btn-primary">Edit</button>
-                    @if (isUpdateFormVisible)
+                    <td><button @onclick="() => UpdateManga(m)" class="btn btn-primary">Edit</button>
+                    @if (m.isUpdateFormVisible)
                     {
                         <br>
                         <EditForm Model="@M" OnValidSubmit="@HandleUpdate">
@@ -129,9 +129,9 @@ else
         StateHasChanged();
     }
     bool isUpdateFormVisible = false;
-    private async void UpdateManga()
+    private async void UpdateManga(Manga m)
     {
-        isUpdateFormVisible = true;
+        m.isUpdateFormVisible = true;
         StateHasChanged();
     }
     private void HandleUpdate()
