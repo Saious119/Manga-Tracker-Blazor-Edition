@@ -14,7 +14,7 @@ public class EmailSender : IEmailSender
     {
         Options = optionsAccessor.Value;
         _logger = logger;
-        Options.SendGridKey = "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";
+        Options.SendGridKey = ""; //need to read key from a file
     }
 
     public AuthMessageSenderOptions Options { get; } //Set with Secret Manager.
