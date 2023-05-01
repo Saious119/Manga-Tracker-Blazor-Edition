@@ -1,5 +1,4 @@
 ﻿@page "/"
-
 <PageTitle>Manga Tracker</PageTitle>
 
 @using MangaTracker_Temp.Services
@@ -87,7 +86,7 @@ else
     private List<Manga> mangaL;
     private List<Manga> mangaList;
     private string user;
-
+    [Authorize]
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();  

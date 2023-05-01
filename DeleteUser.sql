@@ -1,0 +1,2 @@
+﻿select * from [aspnet-MangaTracker_Temp-8318E2E3-B957-408E-9361-534D017547D0].dbo.AspNetUsers;
+DELETE from [aspnet-MangaTracker_Temp-8318E2E3-B957-408E-9361-534D017547D0].dbo.AspNetUsers where Email='';

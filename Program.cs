@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Azure.Identity;
+using System.Globalization;
+using AspNet.Security.OAuth.Discord;
+using Microsoft.AspNetCore.Authentication.Cookies;
 //using Microsoft.AspNetCore.Authentication.Negotiate;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +31,30 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
+DiscordService DiscordService = new DiscordService();
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = DiscordAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddDiscord(options =>
+    {
+        options.ClientId = DiscordService.clientID;
+        options.ClientSecret = DiscordService.clientSecret;
+        options.Scope.Add("identify");
+        options.SaveTokens = true;
+
+        /*options.ClaimActions.MapCustomJson("urn:discord:avatar:url", user =>
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "https://cdn.discordapp.com/avatars/{0}/{1}.{2}",
+                user.GetString("id"),
+                user.GetString("avatar"),
+                user.GetString("avatar").StartsWith("a_") ? "gif" : "png"));*/
+    });
 /*
 var initialScopes = builder.Configuration["DownstreamApi:Scopes"]?.Split(' ') ?? builder.Configuration["MicrosoftGraph:Scopes"]?.Split(' ');
 
@@ -53,7 +80,7 @@ builder.Services.AddSingleton<MangaService>();
 builder.Services.AddHttpContextAccessor();
 //other auth providers
 
-builder.Services.AddAuthentication();
+//builder.Services.AddAuthentication();
    /*.AddGoogle(options =>
    {
        IConfigurationSection googleAuthNSection =
