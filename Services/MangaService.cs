@@ -1,13 +1,4 @@
 ﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using Newtonsoft.Json.Bson;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MongoDB.Driver;
 
 namespace MangaTracker_Temp.Services
 {
@@ -22,17 +13,10 @@ namespace MangaTracker_Temp.Services
         public MangaService()
         {
             //Connect to MongoDB for Data
-
             var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
             settings.ServerApi = new ServerApi(ServerApiVersion.V1);
             var client = new MongoClient(settings);
             var database = client.GetDatabase("MangaDB");
-            //var collection = database.GetCollection<BsonDocument>(user);
-            //var documents = collection.Find(new BsonDocument()).ToList();
-            /*foreach (BsonDocument doc in documents)
-            {
-                Console.WriteLine(doc.ToString());
-            }*/
         }
         public async Task<List<Manga>> GetMangaAsync(string user)
         {
@@ -41,26 +25,21 @@ namespace MangaTracker_Temp.Services
                 user = "NoUser";
             }
             //Connect to MongoDB for Data
-            Console.WriteLine("here!!");
             var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
             settings.ServerApi = new ServerApi(ServerApiVersion.V1);
             var client = new MongoClient(settings);
             var database = client.GetDatabase("MangaDB");
             IMongoCollection<Manga> collection = null;
-            Console.WriteLine("checking for user");
+            Console.WriteLine("Checking DB for user: {0}", user);
             collection = database.GetCollection<Manga>(user);
             if (collection == null)
             {
-                Console.WriteLine("making new User {0}", user);
+                Console.WriteLine("Making new User {0}", user);
                 await database.CreateCollectionAsync(user);
             }
             collection = database.GetCollection<Manga>(user);
-            Console.WriteLine("got collection");
+            Console.WriteLine("Found collection for user: {0}", user);
             var documents = collection.Find(new BsonDocument()).ToList();
-            foreach (Manga doc in documents)
-            {
-                Console.WriteLine(doc.ToString());
-            }
             return documents;
         }
         public async Task AddMangaToDB(Manga newManga, string user)

@@ -1,16 +1,21 @@
-﻿namespace MangaTracker_Temp.Services
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace MangaTracker_Temp.Services
 {
-    public class DiscordService
+    public class DiscordService : Controller
     {
-        public string botToken { get; set; }
-        public string clientID { get; set; }
-        public string clientSecret { get; set; }
-        public DiscordService() 
+        private readonly IHttpContextAccessor? _httpContextAccessor;
+        private readonly ISession? _session;
+        public static string? userDiscordID { get; set; }
+        //private static readonly HttpContextService _httpContextService;
+        public DiscordService(IHttpContextAccessor httpContextAccessor)
         {
-            var lines = File.ReadAllLines("DiscordAuth.txt");
-            botToken = lines[0];
-            clientID = lines[1];
-            clientSecret = lines[2];
+            _httpContextAccessor = httpContextAccessor;
+            _session = httpContextAccessor.HttpContext.Session;
+        }
+        public void SetSession()
+        {
+            _session.SetString("userDiscordID", userDiscordID);
         }
     }
 }
