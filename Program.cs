@@ -9,6 +9,12 @@ using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using MongoDB.Bson;
+using Newtonsoft.Json.Linq;
 
 
 //using Microsoft.AspNetCore.Authentication.Negotiate;
@@ -28,11 +34,13 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddDistributedMemoryCache();
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
     // Set the cookie policy options here
-    options.MinimumSameSitePolicy = SameSiteMode.None;
+    options.MinimumSameSitePolicy = SameSiteMode.Lax;
 });
 
 builder.Services.AddSession(options =>
@@ -65,7 +73,7 @@ builder.Services.AddAuthentication(options =>
         options.Events.OnTicketReceived = async context =>
         {
             //Console.WriteLine(context.Principal.Identity.Name + context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value);
-            var discordId = context.Principal.Identity.Name+"#"+ context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value;
+            var discordId = context.Principal.Identity.Name + "#" + context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value;
             // save the discordId to your user database
 
             if (discordId != null)
@@ -90,6 +98,36 @@ builder.Services.AddAuthentication(options =>
                 user.GetString("avatar"),
                 user.GetString("avatar").StartsWith("a_") ? "gif" : "png"));
     });
+    /*.AddOAuth("Discord", options =>
+    {
+        options.ClientId = DiscordConfigReader.clientID;
+        options.ClientSecret = DiscordConfigReader.clientSecret;
+        options.CallbackPath = new PathString("/signin-discord");
+        options.AuthorizationEndpoint = "https://discordapp.com/api/oauth2/authorize";
+        options.TokenEndpoint = "https://discordapp.com/api/oauth2/token";
+        options.Scope.Add("identify");
+        options.SaveTokens = true;
+        options.Events = new OAuthEvents
+        {
+            OnCreatingTicket = async context =>
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+
+                var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+                response.EnsureSuccessStatusCode();
+
+                using var stream = await response.Content.ReadAsStreamAsync();
+                var json = await JsonDocument.ParseAsync(stream);
+
+                var user = json.RootElement;
+
+                context.RunClaimActions(user);
+            }
+        };
+    });*/
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 //    .AddMicrosoftIdentityConsentHandler();

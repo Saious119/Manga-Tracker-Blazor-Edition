@@ -1,0 +1,120 @@
+﻿@page "/login"
+
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+
+@using System.Net.Http.Json
+
+@if (IsAuthenticated)
+{
+    <p>You are already authenticated.</p>
+}
+else
+{
+    <button class="btn btn-primary" @onclick="StartAuthentication">Log in with Discord</button>
+}
+
+@code {
+    private bool IsAuthenticated => !string.IsNullOrWhiteSpace(_accessToken);
+
+    private string _accessToken;
+
+    private async Task StartAuthentication()
+    {
+        var uri = new UriBuilder(NavigationManager.BaseUri)
+        {
+            Path = "/signin-discord"
+        }.Uri;
+
+        var response = await HttpClient.GetAsync(uri);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseUrl = new Uri(responseContent);
+
+            await JSRuntime.InvokeAsync<object[]>("open", new object[] { new object[] { responseUrl.ToString() } });
+        }
+        else
+        {
+            throw new Exception($"Failed to start authentication flow. {response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        if (uri.AbsolutePath.StartsWith("/signin-discord"))
+        {
+            var code = uri.Query
+                .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault(q => q.StartsWith("code="))
+                ?.Substring("code=".Length);
+
+            if (!string.IsNullOrWhiteSpace(code))
+            {
+                DiscordConfigReader DR = new DiscordConfigReader();
+                DR.Init();
+                var tokenResponse = await HttpClient.PostAsync("/oauth2/token", new FormUrlEncodedContent(new Dictionary<string, string>
+                    {
+                        ["client_id"] = DiscordConfigReader.clientID,
+                        ["client_secret"] = DiscordConfigReader.clientSecret,
+                        ["grant_type"] = "None",
+                        ["code"] = code,
+                        ["redirect_uri"] = $"{NavigationManager.BaseUri}/signin-discord"
+                    }));
+
+                if (tokenResponse.IsSuccessStatusCode)
+                {
+                    var tokenResponseContent = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
+                    _accessToken = tokenResponseContent.AccessToken;
+
+                    var userResponse = await HttpClient.GetAsync("https://discordapp.com/api/users/@me", HttpCompletionOption.ResponseHeadersRead);
+
+                    // Read the response headers
+                    var headers = userResponse.Headers;
+                    foreach (var header in headers)
+                    {
+                        Console.WriteLine($"{header.Key}: {header.Value}");
+                    }
+                    if (userResponse.IsSuccessStatusCode)
+                    {
+                        var user = await userResponse.Content.ReadFromJsonAsync<UserResponse>();
+
+                        // Store user information in session or database
+                        // ...
+
+                        NavigationManager.NavigateTo("/");
+                    }
+                    else
+                    {
+                        throw new Exception($"Failed to get user information. {userResponse.StatusCode}: {await userResponse.Content.ReadAsStringAsync()}");
+                    }
+                }
+                else
+                {
+                    throw new Exception($"Failed to get access token. {tokenResponse.StatusCode}: {await tokenResponse.Content.ReadAsStringAsync()}");
+                }
+            }
+            else
+            {
+                throw new Exception("Authorization code is missing.");
+            }
+        }
+        
+    }
+
+    private class TokenResponse
+    {
+        public string AccessToken { get; set; }
+    }
+
+    private class UserResponse
+    {
+        public string Id { get; set; }
+        public string Username { get; set; }
+        public string Discriminator { get; set; }
+        public string Avatar { get; set; }
+    }
+}
