@@ -14,7 +14,8 @@ public class EmailSender : IEmailSender
     {
         Options = optionsAccessor.Value;
         _logger = logger;
-        Options.SendGridKey = ""; //need to read key from a file
+        var lines = File.ReadAllLines("auth.txt");
+        Options.SendGridKey = lines[0]; //need to read key from a file
     }
 
     public AuthMessageSenderOptions Options { get; } //Set with Secret Manager.
@@ -33,7 +34,7 @@ public class EmailSender : IEmailSender
         var client = new SendGridClient(apiKey);
         var msg = new SendGridMessage()
         {
-            From = new EmailAddress("Joe@contoso.com", "Password Recovery"),
+            From = new EmailAddress("andym@fortrash.com", "Password Recovery"),
             Subject = subject,
             PlainTextContent = message,
             HtmlContent = message

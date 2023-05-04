@@ -6,12 +6,17 @@ using WebPWrecover.Services;
 using Microsoft.AspNetCore.Identity;
 using ElectronNET.API;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.UI;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Authorization;
-using Azure.Identity;
+using System.Globalization;
+using AspNet.Security.OAuth.Discord;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using MongoDB.Bson;
+using Newtonsoft.Json.Linq;
+
+
 //using Microsoft.AspNetCore.Authentication.Negotiate;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,39 +33,107 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
-/*
-var initialScopes = builder.Configuration["DownstreamApi:Scopes"]?.Split(' ') ?? builder.Configuration["MicrosoftGraph:Scopes"]?.Split(' ');
 
-builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-.AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"))
-        .EnableTokenAcquisitionToCallDownstreamApi(initialScopes)
-.AddMicrosoftGraph(builder.Configuration.GetSection("MicrosoftGraph"))
-            .AddInMemoryTokenCaches();
+builder.Services.AddHttpClient();
 
-builder.Services.AddControllersWithViews()
-.AddMicrosoftIdentityUI();
-
-builder.Services.AddAuthorization(options =>
-
+builder.Services.AddDistributedMemoryCache();
+builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.FallbackPolicy = options.DefaultPolicy;
+    // Set the cookie policy options here
+    options.MinimumSameSitePolicy = SameSiteMode.Lax;
 });
-*/
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "DiscordInfo";
+    options.IdleTimeout = TimeSpan.FromDays(1);
+    options.Cookie.IsEssential = true;
+});
+
+var httpContext = new DefaultHttpContext();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<DiscordService>();
+DiscordConfigReader DiscordConfigReader = new DiscordConfigReader();
+DiscordConfigReader.Init();
+string discordID = "Not Logged In";
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = DiscordAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddDiscord(options =>
+    {
+        options.ClientId = DiscordConfigReader.clientID;
+        options.ClientSecret = DiscordConfigReader.clientSecret;
+        options.CallbackPath = new PathString("/signin-discord");
+        options.Scope.Add("identify");
+        options.SaveTokens = true;
+
+        options.Events.OnTicketReceived = async context =>
+        {
+            //Console.WriteLine(context.Principal.Identity.Name + context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value);
+            var discordId = context.Principal.Identity.Name + "#" + context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value;
+            // save the discordId to your user database
+
+            if (discordId != null)
+            {
+                var httpContextAccessor = new HttpContextAccessor();
+                Console.WriteLine("Discord ID  = {0}", discordId.ToString());
+                DiscordService.userDiscordID = discordId;
+                discordID = discordId.ToString();
+                httpContextAccessor.HttpContext.Session.SetString("DiscordUserId", discordID);
+            }
+            else
+            {
+                Console.WriteLine("Discord ID is null");
+            }
+        };
+
+        options.ClaimActions.MapCustomJson("urn:discord:avatar:url", user =>
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "https://cdn.discordapp.com/avatars/{0}/{1}.{2}",
+                user.GetString("id"),
+                user.GetString("avatar"),
+                user.GetString("avatar").StartsWith("a_") ? "gif" : "png"));
+    });
+    /*.AddOAuth("Discord", options =>
+    {
+        options.ClientId = DiscordConfigReader.clientID;
+        options.ClientSecret = DiscordConfigReader.clientSecret;
+        options.CallbackPath = new PathString("/signin-discord");
+        options.AuthorizationEndpoint = "https://discordapp.com/api/oauth2/authorize";
+        options.TokenEndpoint = "https://discordapp.com/api/oauth2/token";
+        options.Scope.Add("identify");
+        options.SaveTokens = true;
+        options.Events = new OAuthEvents
+        {
+            OnCreatingTicket = async context =>
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+
+                var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+                response.EnsureSuccessStatusCode();
+
+                using var stream = await response.Content.ReadAsStreamAsync();
+                var json = await JsonDocument.ParseAsync(stream);
+
+                var user = json.RootElement;
+
+                context.RunClaimActions(user);
+            }
+        };
+    });*/
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 //    .AddMicrosoftIdentityConsentHandler();
 builder.Services.AddSingleton<MangaService>();
 builder.Services.AddHttpContextAccessor();
-//other auth providers
 
-builder.Services.AddAuthentication();
-   /*.AddGoogle(options =>
-   {
-       IConfigurationSection googleAuthNSection =
-       config.GetSection("Authentication:Google");
-       options.ClientId = googleAuthNSection["ClientId"];
-       options.ClientSecret = googleAuthNSection["ClientSecret"];
-   });*/
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 builder.Services.AddElectron();
@@ -83,12 +156,47 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+app.UseCookiePolicy();
+app.UseSession();
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.Map("/signin-discord", signin =>
+{
+    signin.Run(async context =>
+    {
+        var authResult = await context.AuthenticateAsync("Discord");
+        if (authResult.Succeeded)
+        {
+            context.Session.SetString("DiscordUserId", discordID);
+            context.SignInAsync(authResult.Principal);
+            context.Response.Redirect("/");
+        }
+        else
+        {
+            await context.Response.WriteAsync("Authentication failed");
+        }
+    });
+});
+
+app.Map("/signout", signout =>
+{
+    signout.Run(context =>
+    {
+        context.Session.Clear();
+        context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        context.Response.Redirect("/");
+        return Task.CompletedTask;
+    });
+});
+
 app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+//DiscordService.SetSession(discordID);
+
 app.Run();
