@@ -12,6 +12,9 @@
 }
 else
 {
+    <form method="post" asp-action="Login">
+        <a href="/Account/ExternalLogin">Login with Discord OAuth</a>
+    </form>
     <button class="btn btn-primary" @onclick="StartAuthentication">Log in with Discord</button>
 }
 
