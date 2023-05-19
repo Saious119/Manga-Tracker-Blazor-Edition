@@ -1,20 +1,11 @@
 using MangaTracker_Temp.Services;
-using MangaTracker_Temp.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using WebPWrecover.Services;
-using Microsoft.AspNetCore.Identity;
 using ElectronNET.API;
 using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using MongoDB.Bson;
-using Newtonsoft.Json.Linq;
 
 
 //using Microsoft.AspNetCore.Authentication.Negotiate;
@@ -27,12 +18,12 @@ var config = builder.Configuration;
 
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+/*var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>();*/
 
 builder.Services.AddHttpClient();
 
@@ -61,7 +52,11 @@ builder.Services.AddAuthentication(options =>
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = DiscordAuthenticationDefaults.AuthenticationScheme;
     })
-    .AddCookie()
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    })
     .AddDiscord(options =>
     {
         options.ClientId = DiscordConfigReader.clientID;
@@ -73,7 +68,7 @@ builder.Services.AddAuthentication(options =>
         options.Events.OnTicketReceived = async context =>
         {
             //Console.WriteLine(context.Principal.Identity.Name + context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value);
-            var discordId = context.Principal.Identity.Name + "#" + context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value;
+            var discordId = context.Principal.Identity.Name;// + "#" + context.Principal.Identities.FirstOrDefault().Claims.FirstOrDefault(c => c.Type == "urn:discord:user:discriminator").Value;
             // save the discordId to your user database
 
             if (discordId != null)
@@ -97,36 +92,9 @@ builder.Services.AddAuthentication(options =>
                 user.GetString("id"),
                 user.GetString("avatar"),
                 user.GetString("avatar").StartsWith("a_") ? "gif" : "png"));
+        options.AccessDeniedPath = "/Account/AccessDenied";
     });
-    /*.AddOAuth("Discord", options =>
-    {
-        options.ClientId = DiscordConfigReader.clientID;
-        options.ClientSecret = DiscordConfigReader.clientSecret;
-        options.CallbackPath = new PathString("/signin-discord");
-        options.AuthorizationEndpoint = "https://discordapp.com/api/oauth2/authorize";
-        options.TokenEndpoint = "https://discordapp.com/api/oauth2/token";
-        options.Scope.Add("identify");
-        options.SaveTokens = true;
-        options.Events = new OAuthEvents
-        {
-            OnCreatingTicket = async context =>
-            {
-                var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
-
-                var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
-                response.EnsureSuccessStatusCode();
-
-                using var stream = await response.Content.ReadAsStreamAsync();
-                var json = await JsonDocument.ParseAsync(stream);
-
-                var user = json.RootElement;
-
-                context.RunClaimActions(user);
-            }
-        };
-    });*/
+   
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -164,6 +132,20 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/", async (context) =>
+{
+    if (context.User.Identity?.IsAuthenticated != true)
+    {
+        await context.ChallengeAsync("Discord");
+    }
+    else
+    {
+        //await context.Response.WriteAsync("Hello, authenticated user " + DiscordService.userDiscordID+ "!");
+        //context.Session.SetString("DiscordUserId", discordID);
+        context.Response.Redirect("/home");
+    }
+});
+
 app.Map("/signin-discord", signin =>
 {
     signin.Run(async context =>
@@ -173,7 +155,7 @@ app.Map("/signin-discord", signin =>
         {
             context.Session.SetString("DiscordUserId", discordID);
             context.SignInAsync(authResult.Principal);
-            context.Response.Redirect("/");
+            context.Response.Redirect("/home");
         }
         else
         {
