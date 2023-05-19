@@ -14,6 +14,7 @@
 @using Microsoft.AspNetCore.Components.Authorization  
 @using ElectronNET.API;
 @using System.Text;
+@using log4net;
 
 @inject AuthenticationStateProvider AuthenticationStateProvider  
 @inject NavigationManager uriHelper;
@@ -82,6 +83,7 @@ else
 
 @code {
     //private readonly IHttpContextAccessor _httpContextAccessor;
+    private ILog log = LogManager.GetLogger(typeof(Program));
     private Manga M { get; set; } = new Manga();
     private Manga m { get; set; } = new Manga();
     private Manga[]? manga;
@@ -97,7 +99,7 @@ else
         {
             user = Encoding.UTF8.GetString(sessionData);
         }
-        Console.WriteLine("Logging in user: {0} done", user);
+        log.Info("Logging in user: "+user+" done!");
         mangaList = await MS.GetMangaAsync(user);
         manga = mangaList.ToArray();
         mangaL = manga.ToList();
@@ -119,15 +121,14 @@ else
     }
     private void HandleSubmit()
     {
-        Console.WriteLine("Adding to DB");
-        Console.WriteLine("{0}, {1}, {2}, {3}", M.Name, M.Author, M.numRead, M.numVolumes);
+        log.Info(String.Format("Adding to DB: {0}, {1}, {2}, {3}", M.Name, M.Author, M.numRead, M.numVolumes));
         MS.AddMangaToDB(M, user);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         AvgCalc();
         StateHasChanged();
     }
     private async void RemoveManga(string name){
-        Console.WriteLine("Deleting: {0}", name);
+        log.Warn("Deleting: "+ name);
         await MS.RemoveManga(name, user);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         AvgCalc();
@@ -142,7 +143,7 @@ else
     private void HandleUpdate()
     {
         MS.UpdateManga(M, user);
-        Console.WriteLine("Finished updating {0}", M.Name);
+        log.Info("Finished updating "+ M.Name);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         AvgCalc();
         StateHasChanged();
@@ -151,7 +152,7 @@ else
     private void RefreshAvgCalc()
     {
         string result = MS.AvgCalc();
-        Console.WriteLine("New avg = {0}", result);
+        log.Info("New avg = "+ result);
         StateHasChanged();
     }
     private void SortByName()

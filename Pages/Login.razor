@@ -5,6 +5,7 @@
 @inject IJSRuntime JSRuntime
 
 @using System.Net.Http.Json
+@using log4net;
 
 @if (IsAuthenticated)
 {
@@ -22,6 +23,8 @@ else
     private bool IsAuthenticated => !string.IsNullOrWhiteSpace(_accessToken);
 
     private string _accessToken;
+
+    ILog log = LogManager.GetLogger(typeof(Program));
 
     private async Task StartAuthentication()
     {
@@ -79,7 +82,7 @@ else
                     var headers = userResponse.Headers;
                     foreach (var header in headers)
                     {
-                        Console.WriteLine($"{header.Key}: {header.Value}");
+                        log.Info($"{header.Key}: {header.Value}");
                     }
                     if (userResponse.IsSuccessStatusCode)
                     {

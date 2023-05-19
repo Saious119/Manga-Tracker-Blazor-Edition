@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MangaTracker_Temp.Services;
+using Microsoft.Graph;
 using MvvmBlazor;
+using log4net;
 
 namespace MangaTracker_Temp.ViewModel
 {
@@ -13,6 +15,7 @@ namespace MangaTracker_Temp.ViewModel
         public ObservableCollection<Manga> MangaList { get; } = new();
         public AsyncRelayCommand GetMangaCommand { get; }
         MangaService mangaService;
+        private ILog log = LogManager.GetLogger(typeof(Program));
         public MangaViewModel()
         {
             Title = "Manga Tracker";
@@ -39,7 +42,7 @@ namespace MangaTracker_Temp.ViewModel
                 }
             }
             catch(Exception e) { 
-                Console.WriteLine(e.Message);
+                log.Error(e.Message);
                 //await Shell.Current.DisplayAlert("Error!", e.Message, "OK");
             }
             finally

@@ -6,24 +6,16 @@ using Microsoft.AspNetCore.Authentication;
 using System.Globalization;
 using AspNet.Security.OAuth.Discord;
 using Microsoft.AspNetCore.Authentication.Cookies;
-
-
-//using Microsoft.AspNetCore.Authentication.Negotiate;
+using log4net;
+using log4net.Core;
+using log4net.Config;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//var keyVaultEndpoint = new Uri(Environment.GetEnvironmentVariable("VaultUri"));
-//builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
+XmlConfigurator.Configure(new FileInfo("log4net.config"));
+ILog log = LogManager.GetLogger(typeof(Program));
+
 var config = builder.Configuration;
-
-
-// Add services to the container.
-/*var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();*/
 
 builder.Services.AddHttpClient();
 
@@ -74,14 +66,14 @@ builder.Services.AddAuthentication(options =>
             if (discordId != null)
             {
                 var httpContextAccessor = new HttpContextAccessor();
-                Console.WriteLine("Discord ID  = {0}", discordId.ToString());
+                log.Info("Discord ID = "+discordId.ToString());
                 DiscordService.userDiscordID = discordId;
                 discordID = discordId.ToString();
                 httpContextAccessor.HttpContext.Session.SetString("DiscordUserId", discordID);
             }
             else
             {
-                Console.WriteLine("Discord ID is null");
+                log.Error("Discord ID is null");
             }
         };
 
