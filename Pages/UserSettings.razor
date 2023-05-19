@@ -1,5 +1,6 @@
 ﻿@page "/UserSettings"
 @using Discord.WebSocket
+@using log4net;
 
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager uriHelper;
@@ -23,12 +24,12 @@
     private UserModel userModel { get; set; } = new UserModel();
     private Manga[]? manga;
     private List<Manga> mangaList;
+    private ILog log = LogManager.GetLogger(typeof(Program));
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         userModel.UserName = authState.User.Identity.Name;
-        Console.WriteLine("http struf: {0} done", userModel.UserName);
         mangaList = await MS.GetMangaAsync(userModel.UserName);
         manga = mangaList.ToArray();
         base.OnInitialized();
@@ -56,17 +57,17 @@
                 var user = await _client.Rest.GetGuildUserAsync(guildID, DiscordUserID);
                 var oldName = user.Nickname;
                 oldName = oldName.Split('(')[0];
-                Console.WriteLine(oldName);
+                log.Info(oldName);
                 var newName = oldName + " (" + MS.AvgCalc() + "%)";
-                Console.WriteLine(newName);
+                log.Info(newName);
                 await user.ModifyAsync(p => p.Nickname = newName);
             };
             await _client.StopAsync();
-            Console.WriteLine("Discord nickname updated");
+            log.Info("Discord nickname updated");
         }
         catch(Exception e)
         {
-            Console.WriteLine(e);
+            log.Error(e);
         }
     }
 }

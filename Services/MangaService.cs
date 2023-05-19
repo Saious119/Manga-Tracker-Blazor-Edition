@@ -1,11 +1,13 @@
 ﻿using MongoDB.Bson;
+using log4net;
 
 namespace MangaTracker_Temp.Services
 {
     public class MangaService
     {
         List<Manga> mangaList = new List<Manga>();
-        List<int> avgs = new List<int>(); 
+        List<int> avgs = new List<int>();
+        private ILog log = LogManager.GetLogger(typeof(Program));
         public async Task<List<Manga>> GetManga()
         {
             return mangaList;
@@ -30,15 +32,15 @@ namespace MangaTracker_Temp.Services
             var client = new MongoClient(settings);
             var database = client.GetDatabase("MangaDB");
             IMongoCollection<Manga> collection = null;
-            Console.WriteLine("Checking DB for user: {0}", user);
+            log.Info("Checking DB for user: "+ user);
             collection = database.GetCollection<Manga>(user);
             if (collection == null)
             {
-                Console.WriteLine("Making new User {0}", user);
+                log.Info("Making new User "+ user);
                 await database.CreateCollectionAsync(user);
             }
             collection = database.GetCollection<Manga>(user);
-            Console.WriteLine("Found collection for user: {0}", user);
+           log.Info("Found collection for user: "+ user);
             var documents = collection.Find(new BsonDocument()).ToList();
             return documents;
         }
@@ -57,7 +59,7 @@ namespace MangaTracker_Temp.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                log.Error(e);
             }
         }
         public async Task RemoveManga(string nameToFind, string user)
@@ -74,7 +76,7 @@ namespace MangaTracker_Temp.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                log.Error(e);
             }
         }
         public async Task UpdateManga(Manga mangaToUpdate, string user)
@@ -86,7 +88,7 @@ namespace MangaTracker_Temp.Services
             }
             catch(Exception e)
             {
-                Console.WriteLine(e);
+                log.Error(e);
             }
         }
         public IMongoCollection<Manga>? GetCollection(string user)
@@ -102,7 +104,7 @@ namespace MangaTracker_Temp.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                log.Error(e);
             }
             return null;
         }
@@ -134,7 +136,7 @@ namespace MangaTracker_Temp.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                log.Error(e);
             }
             return "0";
         }
