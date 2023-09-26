@@ -1,6 +1,4 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,17 +8,19 @@ namespace MangaTracker_Temp.Model
 {
     public class Manga
     {
-        [BsonId]
-        public ObjectId id { get; set; }
-        [BsonElement("Name")]
         public string Name { get; set; }
-        [BsonElement("Author")]
         public string Author { get; set; }
-        [BsonElement("numVolumes")]
-        public string numVolumes { get; set; }
-        [BsonElement("numRead")]
         public string numRead { get; set; }
+        public string numVolumes { get; set; }
 
         public bool isUpdateFormVisible = false;
+        public Manga(string Name, string Author, string numRead, string numVolumes)
+        {
+            this.Name = Name;
+            this.Author = Author;
+            this.numRead = numRead;
+            this.numVolumes = numVolumes;
+        }
+        public Manga() { }
     }
 }

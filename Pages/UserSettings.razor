@@ -30,7 +30,7 @@
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         userModel.UserName = authState.User.Identity.Name;
-        mangaList = await MS.GetMangaAsync(userModel.UserName);
+        mangaList = MS.GetManga(userModel.UserName);
         manga = mangaList.ToArray();
         base.OnInitialized();
         var timer = new System.Threading.Timer((_) =>

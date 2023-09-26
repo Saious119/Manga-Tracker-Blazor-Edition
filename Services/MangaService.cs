@@ -1,5 +1,5 @@
-﻿using MongoDB.Bson;
-using log4net;
+﻿using log4net;
+using Npgsql;
 
 namespace MangaTracker_Temp.Services
 {
@@ -8,105 +8,126 @@ namespace MangaTracker_Temp.Services
         List<Manga> mangaList = new List<Manga>();
         List<int> avgs = new List<int>();
         private ILog log = LogManager.GetLogger(typeof(Program));
+        private string connString; 
         public async Task<List<Manga>> GetManga()
         {
             return mangaList;
         }
         public MangaService()
         {
-            //Connect to MongoDB for Data
-            var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
-            settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-            var client = new MongoClient(settings);
-            var database = client.GetDatabase("MangaDB");
+            var connStringBuilder = new NpgsqlConnectionStringBuilder();
+            connStringBuilder.SslMode = SslMode.VerifyFull;
+            string? databaseUrlEnv = GetDataBaseUrl();
+            if (databaseUrlEnv == "")
+            {
+                connStringBuilder.Host = "localhost";
+                connStringBuilder.Port = 26257;
+                connStringBuilder.Username = "username";
+                connStringBuilder.Passfile = "password";
+                connStringBuilder.IncludeErrorDetail = true;
+            }
+            else
+            {
+                Uri databaseUrl = new Uri(databaseUrlEnv);
+                connStringBuilder.Host = databaseUrl.Host;
+                connStringBuilder.Port = databaseUrl.Port;
+                var items = databaseUrl.UserInfo.Split(new[] { ':' });
+                if (items.Length > 0) { connStringBuilder.Username = items[0]; }
+                if (items.Length > 1) { connStringBuilder.Password = items[1]; }
+                connStringBuilder.IncludeErrorDetail = true;
+            }
+            connStringBuilder.Database = "mangadb";
+            connString = connStringBuilder.ConnectionString;
         }
-        public async Task<List<Manga>> GetMangaAsync(string user)
+
+        public List<Manga> GetManga(string user)
         {
             if(user == null)
             {
                 user = "NoUser";
             }
-            //Connect to MongoDB for Data
-            var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
-            settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-            var client = new MongoClient(settings);
-            var database = client.GetDatabase("MangaDB");
-            IMongoCollection<Manga> collection = null;
-            log.Info("Checking DB for user: "+ user);
-            collection = database.GetCollection<Manga>(user);
-            if (collection == null)
+            List<Manga> listToReturn = new List<Manga>();
+            try
             {
-                log.Info("Making new User "+ user);
-                await database.CreateCollectionAsync(user);
+                using (var conn = new NpgsqlConnection(connString))
+                {
+                    conn.Open();
+                    string accountSqlCmd = "CREATE TABLE IF NOT EXISTS " + user + " (name VARCHAR, author VARCHAR, numread VARCHAR, numvolumes VARCHAR)";
+                    using (var cmd = new NpgsqlCommand(accountSqlCmd, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    string sql = "SELECT name, author, numread, numvolumes FROM " + user;
+                    using (var cmd = new NpgsqlCommand(sql, conn))
+                    {
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                //Console.WriteLine("{0} by {1}, {2}/{3}", reader.GetValue(0), reader.GetValue(1), reader.GetValue(2), reader.GetValue(3));
+                                Manga MangaToReturn = new Manga(reader.GetValue(0).ToString(), reader.GetValue(1).ToString(), reader.GetValue(2).ToString(), reader.GetValue(3).ToString());
+                                if (MangaToReturn != null)
+                                {
+                                    listToReturn.Add(MangaToReturn);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch(Exception e) {
+                log.Error(e);
             }
-            collection = database.GetCollection<Manga>(user);
-           log.Info("Found collection for user: "+ user);
-            var documents = collection.Find(new BsonDocument()).ToList();
-            return documents;
+            return listToReturn;
         }
         public async Task AddMangaToDB(Manga newManga, string user)
         {
             try
             {
-                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
-                settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-                var client = new MongoClient(settings);
-                var database = client.GetDatabase("MangaDB");
-                var collection = database.GetCollection<BsonDocument>(user);
-                var documents = collection.Find(new BsonDocument()).ToList();
-                var newDoc = newManga.ToBsonDocument();
-                collection.InsertOne(newDoc);
+                using (var conn = new NpgsqlConnection(connString))
+                {
+                    conn.Open();
+                    using (var cmd = new NpgsqlCommand())
+                    {
+                        cmd.Connection = conn;
+                        cmd.CommandText = "UPSERT INTO " + user + "(name, author, numread, numvolumes) VALUES(@val1, @val2, @val3, @val4)";
+                        cmd.Parameters.AddWithValue("val1", newManga.Name);
+                        cmd.Parameters.AddWithValue("val2", newManga.Author);
+                        cmd.Parameters.AddWithValue("val3", newManga.numRead);
+                        cmd.Parameters.AddWithValue("val4", newManga.numVolumes);
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
             }
-            catch (Exception e)
-            {
-                log.Error(e);
-            }
+            catch(Exception e) { log.Error(e); }
         }
-        public async Task RemoveManga(string nameToFind, string user)
+        public async Task RemoveManga(string nameToFind, string authorToFind, string user)
         {
             try
             {
-                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
-                settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-                var client = new MongoClient(settings);
-                var database = client.GetDatabase("MangaDB");
-                var collection = database.GetCollection<BsonDocument>(user);
-                var deleteFilter = Builders<BsonDocument>.Filter.Eq("Name", nameToFind);
-                collection.DeleteOne(deleteFilter);
+                using(var conn = new NpgsqlConnection(connString))
+                {
+                    conn.Open();
+                    using(var cmd = new NpgsqlCommand())
+                    {
+                        cmd.Connection = conn;
+                        cmd.CommandText = "DELETE FROM " + user + " WHERE name='" + nameToFind + "' AND author='" + authorToFind+"'";
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
             }
-            catch (Exception e)
-            {
-                log.Error(e);
-            }
+            catch (Exception e) { log.Error(e); }
         }
         public async Task UpdateManga(Manga mangaToUpdate, string user)
         {
             try
             {
-                await RemoveManga(mangaToUpdate.Name, user);
+                await RemoveManga(mangaToUpdate.Name, mangaToUpdate.Author, user);
                 await AddMangaToDB(mangaToUpdate, user);
-            }
-            catch(Exception e)
-            {
-                log.Error(e);
-            }
-        }
-        public IMongoCollection<Manga>? GetCollection(string user)
-        {
-            try
-            {
-                var settings = MongoClientSettings.FromConnectionString("mongodb+srv://guest:defaultPass@serverlessinstance.izekv.mongodb.net/?retryWrites=true&w=majority");
-                settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-                var client = new MongoClient(settings);
-                var database = client.GetDatabase("MangaDB");
-                var collection = database.GetCollection<Manga>(user);
-                return collection;
             }
             catch (Exception e)
             {
                 log.Error(e);
             }
-            return null;
         }
         public string CalcCompletion(int numRead, int numVolumes) 
         {
@@ -139,6 +160,20 @@ namespace MangaTracker_Temp.Services
                 log.Error(e);
             }
             return "0";
+        }
+        private string GetDataBaseUrl()
+        {
+            try
+            {
+                var lines = File.ReadAllLines("auth.txt");
+                string token = lines[1];
+                return token;
+            }
+            catch (Exception e)
+            {
+                log.Error(e);
+            }
+            return "";
         }
     }
 }
