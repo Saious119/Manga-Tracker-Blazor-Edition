@@ -5,9 +5,6 @@
 @using MangaTracker_Temp.Services
 @using MangaTracker_Temp.ViewModel
 @using MangaTracker_Temp.Model
-@using MongoDB;
-@using MongoDB.Bson
-@using MongoDB.Bson.Serialization;
 @using Newtonsoft.Json.Bson;
 @using Newtonsoft.Json;
 @using System.Security.Claims
@@ -60,7 +57,7 @@ else
                     <td>@m.numRead</td>
                     <td>@m.numVolumes</td>
                     <td>@MS.CalcCompletion(Int32.Parse(m.numRead), Int32.Parse(m.numVolumes))</td>
-                    <td><button @onclick="() => RemoveManga(m.Name.ToString())" class="btn btn-primary">Delete</button></td>
+                    <td><button @onclick="() => RemoveManga(m.Name.ToString(), m.Author.ToString())" class="btn btn-primary">Delete</button></td>
                     <td><button @onclick="() => UpdateManga(m)" class="btn btn-primary">Edit</button>
                     @if (m.isUpdateFormVisible)
                     {
@@ -100,7 +97,7 @@ else
             user = Encoding.UTF8.GetString(sessionData);
         }
         log.Info("Logging in user: "+user+" done!");
-        mangaList = await MS.GetMangaAsync(user);
+        mangaList = MS.GetManga(user);
         manga = mangaList.ToArray();
         mangaL = manga.ToList();
         base.OnInitialized();
@@ -127,9 +124,9 @@ else
         AvgCalc();
         StateHasChanged();
     }
-    private async void RemoveManga(string name){
+    private async void RemoveManga(string name, string author){
         log.Warn("Deleting: "+ name);
-        await MS.RemoveManga(name, user);
+        await MS.RemoveManga(name, author, user);
         uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
         AvgCalc();
         StateHasChanged();
@@ -157,28 +154,28 @@ else
     }
     private void SortByName()
     {
-        var qc = MS.GetCollection(user).AsQueryable();
+        var qc = MS.GetManga(user).AsQueryable();
         var q = qc.OrderBy(x => x.Name);
         mangaL = q.ToList();
         StateHasChanged();
     }
     private void SortByAuthor()
     {
-        var qc = MS.GetCollection(user).AsQueryable();
+        var qc = MS.GetManga(user).AsQueryable();
         var q = qc.OrderBy(x => x.Author);
         mangaL = q.ToList();
         StateHasChanged();
     }
     private void SortByNumVolumes()
     {
-        var qc = MS.GetCollection(user).AsQueryable();
+        var qc = MS.GetManga(user).AsQueryable();
         var q = qc.ToList().OrderBy(x => Int32.Parse(x.numVolumes));
         mangaL = q.ToList();
         StateHasChanged();
     }
     private void SortByNumRead()
     {
-        var qc = MS.GetCollection(user).AsQueryable();
+        var qc = MS.GetManga(user).AsQueryable();
         var q = qc.ToList().OrderBy(x => Int32.Parse(x.numRead));
         mangaL = q.ToList();
         StateHasChanged();
