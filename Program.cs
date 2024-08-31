@@ -16,7 +16,6 @@ XmlConfigurator.Configure(new FileInfo("log4net.config"));
 ILog log = LogManager.GetLogger(typeof(Program));
 
 var config = builder.Configuration;
-builder.Services.AddSingleton<IDiscordConfigReader, DiscordConfigReader>();
 
 builder.Services.AddHttpClient();
 
@@ -91,6 +90,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 //    .AddMicrosoftIdentityConsentHandler();
 builder.Services.AddSingleton<IMangaService, MangaService>();
+builder.Services.AddSingleton<IDiscordConfigReader, DiscordConfigReader>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();

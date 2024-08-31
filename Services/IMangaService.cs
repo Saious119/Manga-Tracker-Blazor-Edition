@@ -9,5 +9,6 @@
         public Task UpdateManga(Manga mangaToUpdate, string user);
         public string CalcCompletion(int numRead, int numVolumes);
         public string AvgCalc();
+        public string AvgCalc(List<Manga> _mangaList);
     }
 }

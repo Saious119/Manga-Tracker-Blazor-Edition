@@ -4,15 +4,16 @@
 
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager uriHelper;
-@inject MangaService MS;
+@inject IMangaService MS;
+@inject IDiscordConfigReader DR;
 
 <PageTitle>User Settings</PageTitle>
 
-<p><strong>Feature Coming Soon!</strong></p>
+<p><strong>Update your discord username with your completion percent!</strong></p>
 
 <body>
     <EditForm Model="@userModel" OnValidSubmit="() => ConnectToDiscord()">
-        <InputText placeholder="Discord Guild ID" id="GuildID" @bind-Value="userModel.GuildID" class="form-control form-control-sm"/>
+        <InputText placeholder="Discord Server ID" id="GuildID" @bind-Value="userModel.GuildID" class="form-control form-control-sm"/>
         <InputText placeholder="Discord User ID" id="Discord User ID" @bind-Value="userModel.DiscordID" class="form-control form-control-sm"/>
         <input type="submit" class="btn btn-primary" value="Update Discord Nickname" />
     </EditForm>
@@ -22,16 +23,19 @@
 {
     private Manga M { get; set; } = new Manga();
     private UserModel userModel { get; set; } = new UserModel();
-    private Manga[]? manga;
     private List<Manga> mangaList;
+    private string avg;
     private ILog log = LogManager.GetLogger(typeof(Program));
+    private DiscordSocketClient _client;
+    private ulong guildID;
+    private ulong DiscordUserID;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         userModel.UserName = authState.User.Identity.Name;
         mangaList = MS.GetManga(userModel.UserName);
-        manga = mangaList.ToArray();
+        avg = MS.AvgCalc(mangaList);
         base.OnInitialized();
         var timer = new System.Threading.Timer((_) =>
         {
@@ -46,23 +50,38 @@
     {
         try
         {
-            DiscordSocketClient _client = new DiscordSocketClient();
-            ulong guildID = ulong.Parse(userModel.GuildID);
-            ulong DiscordUserID = ulong.Parse(userModel.DiscordID);
-            var token = File.ReadAllText("auth.txt");
+            _client = new DiscordSocketClient();
+            _client.Ready += Client_Ready;
+            guildID = ulong.Parse(userModel.GuildID);
+            DiscordUserID = ulong.Parse(userModel.DiscordID);
+            var token = DR.getToken();
             await _client.LoginAsync(Discord.TokenType.Bot, token);
             await _client.StartAsync();
-            _client.Ready += async () =>
+            await Task.Delay(-1);
+        }
+        catch(Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+    public async Task Client_Ready()
+    {
+        try
+        {
+            var guild = await _client.Rest.GetGuildAsync(guildID);
+            var user = await guild.GetUserAsync(DiscordUserID);
+            var oldName = user.Nickname;
+            oldName = oldName.Split('(')[0];
+            oldName = oldName.Trim();
+            log.Info("Old Discord name ="+oldName);
+            string newPercent = MS.AvgCalc();
+            var newName = (oldName + " (" + avg + "%)");
+            if (newName.Length > 32)
             {
-                var user = await _client.Rest.GetGuildUserAsync(guildID, DiscordUserID);
-                var oldName = user.Nickname;
-                oldName = oldName.Split('(')[0];
-                log.Info(oldName);
-                var newName = oldName + " (" + MS.AvgCalc() + "%)";
-                log.Info(newName);
-                await user.ModifyAsync(p => p.Nickname = newName);
-            };
-            await _client.StopAsync();
+                newName = newName.Substring(0, 32);
+            }
+            log.Info("New Discord name = "+newName);
+            await user.ModifyAsync(p => p.Nickname = newName);
             log.Info("Discord nickname updated");
         }
         catch(Exception e)

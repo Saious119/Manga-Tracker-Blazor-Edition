@@ -1,6 +1,7 @@
 ﻿namespace MangaTracker_Temp.Services
 {
-    public class IDiscordConfigReader
+    public interface IDiscordConfigReader
     {
+        public string getToken();
     }
 }

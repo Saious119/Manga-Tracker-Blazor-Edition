@@ -42,7 +42,6 @@ namespace MangaTracker_Temp.Services
         {
             return mangaList;
         }
-
         public List<Manga> GetManga(string user)
         {
             if(user == null)
@@ -153,9 +152,32 @@ namespace MangaTracker_Temp.Services
                 }
                 if (total == 0 || avgs.Count() == 0)
                 {
-                    return string.Empty;
+                    return "0";
                 }
                 total = total / avgs.Count();
+                return total.ToString();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            return "0";
+        }
+        public string AvgCalc(List<Manga> _mangaList)
+        {
+            try
+            {
+                int total = 0;
+                foreach (var item in _mangaList)
+                {
+                    var seriesCompletion = CalcCompletion(Int32.Parse(item.numRead), Int32.Parse(item.numVolumes));
+                    total += Int32.Parse(seriesCompletion);
+                }
+                if (total == 0 || _mangaList.Count() == 0)
+                {
+                    return "0";//string.Empty;
+                }
+                total = total / _mangaList.Count();
                 return total.ToString();
             }
             catch (Exception e)
