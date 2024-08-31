@@ -351,3 +351,7 @@ MigrationBackup/
 auth.txt
 /DiscordAuth.txt
 /Properties/launchSettings.json
+
+
+.config
+.vscode
