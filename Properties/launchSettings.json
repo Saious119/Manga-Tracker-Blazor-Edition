@@ -21,7 +21,8 @@
       "launchBrowser": true,
       "applicationUrl": "https://localhost:7035;http://localhost:5035",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "db_connect_string": "postgresql://andy:jBSSnPInykWpXjRcEiRg-A@manga-tracker-5581.g8z.gcp-us-east1.cockroachlabs.cloud:26257/mangadb?sslmode=verify-full"
       }
     },
     "IIS Express": {

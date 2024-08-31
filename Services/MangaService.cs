@@ -3,21 +3,20 @@ using Npgsql;
 
 namespace MangaTracker_Temp.Services
 {
-    public class MangaService
+    public class MangaService : IMangaService
     {
         List<Manga> mangaList = new List<Manga>();
         List<int> avgs = new List<int>();
         private ILog log = LogManager.GetLogger(typeof(Program));
         private string connString; 
-        public async Task<List<Manga>> GetManga()
+        private readonly IConfiguration _configuration;
+
+        public MangaService(IConfiguration configuration)
         {
-            return mangaList;
-        }
-        public MangaService()
-        {
+            this._configuration = configuration;
             var connStringBuilder = new NpgsqlConnectionStringBuilder();
             connStringBuilder.SslMode = SslMode.VerifyFull;
-            string? databaseUrlEnv = GetDataBaseUrl();
+            string? databaseUrlEnv = this._configuration["db_connect_string"];
             if (databaseUrlEnv == "")
             {
                 connStringBuilder.Host = "localhost";
@@ -38,6 +37,10 @@ namespace MangaTracker_Temp.Services
             }
             connStringBuilder.Database = "mangadb";
             connString = connStringBuilder.ConnectionString;
+        }
+        public async Task<List<Manga>> GetManga()
+        {
+            return mangaList;
         }
 
         public List<Manga> GetManga(string user)
@@ -75,7 +78,7 @@ namespace MangaTracker_Temp.Services
                     }
                 }
             } catch(Exception e) {
-                log.Error(e);
+                Console.WriteLine(e);
             }
             return listToReturn;
         }
@@ -98,7 +101,7 @@ namespace MangaTracker_Temp.Services
                     }
                 }
             }
-            catch(Exception e) { log.Error(e); }
+            catch(Exception e) { Console.WriteLine(e); }
         }
         public async Task RemoveManga(string nameToFind, string authorToFind, string user)
         {
@@ -115,7 +118,7 @@ namespace MangaTracker_Temp.Services
                     }
                 }
             }
-            catch (Exception e) { log.Error(e); }
+            catch (Exception e) { Console.WriteLine(e); }
         }
         public async Task UpdateManga(Manga mangaToUpdate, string user)
         {
@@ -126,7 +129,7 @@ namespace MangaTracker_Temp.Services
             }
             catch (Exception e)
             {
-                log.Error(e);
+                Console.WriteLine(e);
             }
         }
         public string CalcCompletion(int numRead, int numVolumes) 
@@ -157,23 +160,9 @@ namespace MangaTracker_Temp.Services
             }
             catch (Exception e)
             {
-                log.Error(e);
+                Console.WriteLine(e);
             }
             return "0";
-        }
-        private string GetDataBaseUrl()
-        {
-            try
-            {
-                var lines = File.ReadAllLines("auth.txt");
-                string token = lines[1];
-                return token;
-            }
-            catch (Exception e)
-            {
-                log.Error(e);
-            }
-            return "";
         }
     }
 }

@@ -42,7 +42,7 @@ namespace MangaTracker_Temp.ViewModel
                 }
             }
             catch(Exception e) { 
-                log.Error(e.Message);
+                Console.WriteLine(e.Message);
                 //await Shell.Current.DisplayAlert("Error!", e.Message, "OK");
             }
             finally

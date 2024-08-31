@@ -73,7 +73,7 @@ builder.Services.AddAuthentication(options =>
             }
             else
             {
-                log.Error("Discord ID is null");
+                Console.WriteLine("Discord ID is null");
             }
         };
 
@@ -91,7 +91,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 //    .AddMicrosoftIdentityConsentHandler();
-builder.Services.AddSingleton<MangaService>();
+builder.Services.AddSingleton<IMangaService, MangaService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
