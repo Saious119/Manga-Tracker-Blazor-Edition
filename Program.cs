@@ -16,6 +16,7 @@ XmlConfigurator.Configure(new FileInfo("log4net.config"));
 ILog log = LogManager.GetLogger(typeof(Program));
 
 var config = builder.Configuration;
+builder.Services.AddSingleton<IDiscordConfigReader, DiscordConfigReader>();
 
 builder.Services.AddHttpClient();
 
@@ -36,8 +37,7 @@ builder.Services.AddSession(options =>
 var httpContext = new DefaultHttpContext();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<DiscordService>();
-DiscordConfigReader DiscordConfigReader = new DiscordConfigReader();
-DiscordConfigReader.Init();
+DiscordConfigReader DiscordConfigReader = new(builder.Configuration);
 string discordID = "Not Logged In";
 builder.Services.AddAuthentication(options =>
     {
@@ -66,7 +66,6 @@ builder.Services.AddAuthentication(options =>
             if (discordId != null)
             {
                 var httpContextAccessor = new HttpContextAccessor();
-                log.Info("Discord ID = "+discordId.ToString());
                 DiscordService.userDiscordID = discordId;
                 discordID = discordId.ToString();
                 httpContextAccessor.HttpContext.Session.SetString("DiscordUserId", discordID);

@@ -24,10 +24,10 @@
 @if(IsFormVisible)
 {
     <EditForm Model="@M" OnValidSubmit="@HandleSubmit">
-        <InputText id="Name" @bind-Value="M.Name" class="form-control form-control-sm"/>
-        <InputText id="Author" @bind-Value="M.Author" class="form-control form-control-sm"/>
-        <InputText id="numRead" @bind-Value="M.numRead" class="form-control form-control-sm"/>
-        <InputText id="numVolumes" @bind-Value="M.numVolumes" class="form-control form-control-sm"/>
+        <InputText id="Name" @bind-Value="M.Name" placeholder="Title" class="form-control form-control-sm"/>
+        <InputText id="Author" @bind-Value="M.Author" placeholder="Author" class="form-control form-control-sm"/>
+        <InputText id="numRead" @bind-Value="M.numRead" placeholder="Number of volumes/chapters read" class="form-control form-control-sm"/>
+        <InputText id="numVolumes" @bind-Value="M.numVolumes" placeholder="Total number of volumes/chapters" class="form-control form-control-sm"/>
         <input type="submit" class="btn btn-primary" value="Save"/>
     </EditForm>
 }

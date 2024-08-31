@@ -8,14 +8,16 @@ namespace WebPWrecover.Services;
 public class EmailSender : IEmailSender
 {
     private readonly ILogger _logger;
+    private readonly IConfiguration _configuration;
 
     public EmailSender(IOptions<AuthMessageSenderOptions> optionsAccessor,
-                       ILogger<EmailSender> logger)
+                       ILogger<EmailSender> logger,
+                       IConfiguration configuration)
     {
         Options = optionsAccessor.Value;
         _logger = logger;
-        var lines = File.ReadAllLines("auth.txt");
-        Options.SendGridKey = lines[0]; //need to read key from a file
+        _configuration = configuration;
+        Options.SendGridKey = this._configuration["send_grid_key"]; //need to read key from a file
     }
 
     public AuthMessageSenderOptions Options { get; } //Set with Secret Manager.

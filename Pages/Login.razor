@@ -3,6 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
+@inject DiscordConfigReader DiscordConfigReader
 
 @using System.Net.Http.Json
 @using log4net;
@@ -60,8 +61,7 @@ else
 
             if (!string.IsNullOrWhiteSpace(code))
             {
-                DiscordConfigReader DR = new DiscordConfigReader();
-                DR.Init();
+                //DiscordConfigReader DR = new DiscordConfigReader();
                 var tokenResponse = await HttpClient.PostAsync("/oauth2/token", new FormUrlEncodedContent(new Dictionary<string, string>
                     {
                         ["client_id"] = DiscordConfigReader.clientID,
