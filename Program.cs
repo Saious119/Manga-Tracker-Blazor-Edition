@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using log4net;
 using log4net.Core;
 using log4net.Config;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,8 @@ ILog log = LogManager.GetLogger(typeof(Program));
 var config = builder.Configuration;
 
 builder.Services.AddHttpClient();
+
+builder.Services.AddMudServices();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.Configure<CookiePolicyOptions>(options =>

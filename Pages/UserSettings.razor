@@ -4,6 +4,7 @@
 
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager uriHelper;
+@inject ISnackbar Snackbar;
 @inject IMangaService MS;
 @inject IDiscordConfigReader DR;
 
@@ -12,11 +13,16 @@
 <p><strong>Update your discord username with your completion percent!</strong></p>
 
 <body>
-    <EditForm Model="@userModel" OnValidSubmit="() => ConnectToDiscord()">
-        <InputText placeholder="Discord Server ID" id="GuildID" @bind-Value="userModel.GuildID" class="form-control form-control-sm"/>
-        <InputText placeholder="Discord User ID" id="Discord User ID" @bind-Value="userModel.DiscordID" class="form-control form-control-sm"/>
-        <input type="submit" class="btn btn-primary" value="Update Discord Nickname" />
-    </EditForm>
+    @if(!isLoading){
+        <EditForm Model="@userModel" OnValidSubmit="() => ConnectToDiscord()">
+            <InputText placeholder="Discord Server ID" id="GuildID" @bind-Value="userModel.GuildID" class="form-control form-control-sm" />
+            <InputText placeholder="Discord User ID" id="Discord User ID" @bind-Value="userModel.DiscordID" class="form-control form-control-sm" />
+            <input type="submit" class="btn btn-primary" value="Update Discord Nickname" />
+        </EditForm>
+    }
+    @if(isLoading){
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
 </body>
 
 @code
@@ -29,6 +35,7 @@
     private DiscordSocketClient _client;
     private ulong guildID;
     private ulong DiscordUserID;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,6 +57,7 @@
     {
         try
         {
+            isLoading = true;
             _client = new DiscordSocketClient();
             _client.Ready += Client_Ready;
             guildID = ulong.Parse(userModel.GuildID);
@@ -83,10 +91,18 @@
             log.Info("New Discord name = "+newName);
             await user.ModifyAsync(p => p.Nickname = newName);
             log.Info("Discord nickname updated");
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add("Discord Nickname Updated Successfully!", Severity.Normal);
+            isLoading = false;
         }
         catch(Exception e)
         {
             Console.WriteLine(e);
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            Snackbar.Add("Discord Nickname Failed To Update :(", Severity.Error);
+            isLoading = false;
         }
     }
 }
