@@ -15,7 +15,8 @@ namespace MangaTracker_Temp.Services
         {
             this._configuration = configuration;
             var connStringBuilder = new NpgsqlConnectionStringBuilder();
-            connStringBuilder.SslMode = SslMode.VerifyFull;
+            connStringBuilder.SslMode = SslMode.Require;
+            connStringBuilder.TrustServerCertificate = true;
             string? databaseUrlEnv = this._configuration["db_connect_string"];
             if (databaseUrlEnv == "")
             {
