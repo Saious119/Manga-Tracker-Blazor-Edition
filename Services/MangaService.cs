@@ -1,4 +1,5 @@
 ﻿using log4net;
+using MangaTracker_Temp.Data;
 using Npgsql;
 
 namespace MangaTracker_Temp.Services
@@ -10,34 +11,12 @@ namespace MangaTracker_Temp.Services
         private ILog log = LogManager.GetLogger(typeof(Program));
         private string connString; 
         private readonly IConfiguration _configuration;
+        private DataContext _context;
 
-        public MangaService(IConfiguration configuration)
+        public MangaService(IConfiguration configuration, DataContext context)
         {
             this._configuration = configuration;
-            var connStringBuilder = new NpgsqlConnectionStringBuilder();
-            connStringBuilder.SslMode = SslMode.Require;
-            connStringBuilder.TrustServerCertificate = true;
-            string? databaseUrlEnv = this._configuration["db_connect_string"];
-            if (databaseUrlEnv == "")
-            {
-                connStringBuilder.Host = "localhost";
-                connStringBuilder.Port = 26257;
-                connStringBuilder.Username = "username";
-                connStringBuilder.Passfile = "password";
-                connStringBuilder.IncludeErrorDetail = true;
-            }
-            else
-            {
-                Uri databaseUrl = new Uri(databaseUrlEnv);
-                connStringBuilder.Host = databaseUrl.Host;
-                connStringBuilder.Port = databaseUrl.Port;
-                var items = databaseUrl.UserInfo.Split(new[] { ':' });
-                if (items.Length > 0) { connStringBuilder.Username = items[0]; }
-                if (items.Length > 1) { connStringBuilder.Password = items[1]; }
-                connStringBuilder.IncludeErrorDetail = true;
-            }
-            connStringBuilder.Database = "mangadb";
-            connString = connStringBuilder.ConnectionString;
+            this._context = context;
         }
         public async Task<List<Manga>> GetManga()
         {
@@ -52,31 +31,7 @@ namespace MangaTracker_Temp.Services
             List<Manga> listToReturn = new List<Manga>();
             try
             {
-                using (var conn = new NpgsqlConnection(connString))
-                {
-                    conn.Open();
-                    string accountSqlCmd = "CREATE TABLE IF NOT EXISTS " + user + " (name VARCHAR, author VARCHAR, numread VARCHAR, numvolumes VARCHAR)";
-                    using (var cmd = new NpgsqlCommand(accountSqlCmd, conn))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                    string sql = "SELECT name, author, numread, numvolumes FROM " + user;
-                    using (var cmd = new NpgsqlCommand(sql, conn))
-                    {
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                //Console.WriteLine("{0} by {1}, {2}/{3}", reader.GetValue(0), reader.GetValue(1), reader.GetValue(2), reader.GetValue(3));
-                                Manga MangaToReturn = new Manga(reader.GetValue(0).ToString(), reader.GetValue(1).ToString(), reader.GetValue(2).ToString(), reader.GetValue(3).ToString());
-                                if (MangaToReturn != null)
-                                {
-                                    listToReturn.Add(MangaToReturn);
-                                }
-                            }
-                        }
-                    }
-                }
+                listToReturn = _context.Manga.Where(x => x.owner == user).ToList();
             } catch(Exception e) {
                 Console.WriteLine(e);
             }
@@ -86,20 +41,9 @@ namespace MangaTracker_Temp.Services
         {
             try
             {
-                using (var conn = new NpgsqlConnection(connString))
-                {
-                    conn.Open();
-                    using (var cmd = new NpgsqlCommand())
-                    {
-                        cmd.Connection = conn;
-                        cmd.CommandText = "UPSERT INTO " + user + "(name, author, numread, numvolumes) VALUES(@val1, @val2, @val3, @val4)";
-                        cmd.Parameters.AddWithValue("val1", newManga.Name);
-                        cmd.Parameters.AddWithValue("val2", newManga.Author);
-                        cmd.Parameters.AddWithValue("val3", newManga.numRead);
-                        cmd.Parameters.AddWithValue("val4", newManga.numVolumes);
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                }
+                newManga.owner = user;
+                _context.Manga.Add(newManga);
+                await _context.SaveChangesAsync();
             }
             catch(Exception e) { Console.WriteLine(e); }
         }
@@ -107,15 +51,11 @@ namespace MangaTracker_Temp.Services
         {
             try
             {
-                using(var conn = new NpgsqlConnection(connString))
+                var mangaToRemove = _context.Manga.FirstOrDefault(m => m.name == nameToFind && m.author == authorToFind && m.owner == user);
+                if (mangaToRemove != null)
                 {
-                    conn.Open();
-                    using(var cmd = new NpgsqlCommand())
-                    {
-                        cmd.Connection = conn;
-                        cmd.CommandText = "DELETE FROM " + user + " WHERE name='" + nameToFind + "' AND author='" + authorToFind+"'";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
+                    _context.Manga.Remove(mangaToRemove);
+                    await _context.SaveChangesAsync();
                 }
             }
             catch (Exception e) { Console.WriteLine(e); }
@@ -124,17 +64,24 @@ namespace MangaTracker_Temp.Services
         {
             try
             {
-                await RemoveManga(mangaToUpdate.Name, mangaToUpdate.Author, user);
-                await AddMangaToDB(mangaToUpdate, user);
+                var manga = _context.Manga.FirstOrDefault(m => m.name == mangaToUpdate.name && m.author == mangaToUpdate.author && m.owner == user);
+                if (manga != null)
+                {
+                    manga.name = mangaToUpdate.name;
+                    manga.author = mangaToUpdate.author;
+                    manga.numread = mangaToUpdate.numread;
+                    manga.numvolumes = mangaToUpdate.numvolumes;
+                    await _context.SaveChangesAsync();
+                }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
             }
         }
-        public string CalcCompletion(int numRead, int numVolumes) 
+        public string CalcCompletion(int numread, int numvolumes) 
         {
-            var val = Math.Truncate(((double)numRead / (double)numVolumes) * 100).ToString();
+            var val = Math.Truncate(((double)numread / (double)numvolumes) * 100).ToString();
             if(val == null)
             {
                 return "NaN";
@@ -151,11 +98,11 @@ namespace MangaTracker_Temp.Services
                 {
                     total += item;
                 }
-                if (total == 0 || avgs.Count() == 0)
+                if (total == 0 || avgs.Count == 0)
                 {
                     return "0";
                 }
-                total = total / avgs.Count();
+                total = total / avgs.Count;
                 return total.ToString();
             }
             catch (Exception e)
@@ -171,14 +118,14 @@ namespace MangaTracker_Temp.Services
                 int total = 0;
                 foreach (var item in _mangaList)
                 {
-                    var seriesCompletion = CalcCompletion(Int32.Parse(item.numRead), Int32.Parse(item.numVolumes));
+                    var seriesCompletion = CalcCompletion(Int32.Parse(item.numread), Int32.Parse(item.numvolumes));
                     total += Int32.Parse(seriesCompletion);
                 }
                 if (total == 0 || _mangaList.Count() == 0)
                 {
                     return "0";//string.Empty;
                 }
-                total = total / _mangaList.Count();
+                total = total / _mangaList.Count;
                 return total.ToString();
             }
             catch (Exception e)

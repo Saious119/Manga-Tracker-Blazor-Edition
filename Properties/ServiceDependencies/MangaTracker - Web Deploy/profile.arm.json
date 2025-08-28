@@ -9,7 +9,7 @@
       "type": "string",
       "defaultValue": "ResourceGroup1",
       "metadata": {
-        "description": "Name of the resource group for the resource. It is recommended to put resources under same resource group for better tracking."
+        "description": "name of the resource group for the resource. It is recommended to put resources under same resource group for better tracking."
       }
     },
     "resourceGroupLocation": {
@@ -23,7 +23,7 @@
       "type": "string",
       "defaultValue": "MangaTracker",
       "metadata": {
-        "description": "Name of the main resource to be created by this template."
+        "description": "name of the main resource to be created by this template."
       }
     },
     "resourceLocation": {

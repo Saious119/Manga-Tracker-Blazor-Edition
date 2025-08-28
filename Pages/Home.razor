@@ -20,15 +20,18 @@
 
 <h1>Manga Tracker</h1>
 
-<p>If your data doesn't load immediately, please wait a few minutes</p>
+@if(manga?.Length == 0 || manga == null)
+{
+    <p>If your data doesn't load immediately, please wait a few minutes</p>
+}
 <button @onclick="AddManga" class="btn btn-primary">Add Manga</button>
 @if(IsFormVisible)
 {
     <EditForm Model="@M" OnValidSubmit="@HandleSubmit">
-        <InputText id="Name" @bind-Value="M.Name" placeholder="Title" class="form-control form-control-sm"/>
-        <InputText id="Author" @bind-Value="M.Author" placeholder="Author" class="form-control form-control-sm"/>
-        <InputText id="numRead" @bind-Value="M.numRead" placeholder="Number of volumes/chapters read" class="form-control form-control-sm"/>
-        <InputText id="numVolumes" @bind-Value="M.numVolumes" placeholder="Total number of volumes/chapters" class="form-control form-control-sm"/>
+        <InputText id="name" @bind-Value="M.name" placeholder="Title" class="form-control form-control-sm"/>
+        <InputText id="author" @bind-Value="M.author" placeholder="author" class="form-control form-control-sm"/>
+        <InputText id="numread" @bind-Value="M.numread" placeholder="Number of volumes/chapters read" class="form-control form-control-sm"/>
+        <InputText id="numvolumes" @bind-Value="M.numvolumes" placeholder="Total number of volumes/chapters" class="form-control form-control-sm"/>
         <input type="submit" class="btn btn-primary" value="Save"/>
     </EditForm>
 }
@@ -41,9 +44,9 @@ else
 {
     <table class="table">
         <thead>
-           <tr> 
-                <th><button @onclick="SortByName" class="btn btn-primary">Name</button></th>
-                <th><button @onclick="SortByAuthor" class="btn btn-primary">Author</button></th>
+            <tr> 
+                <th><button @onclick="SortByName" class="btn btn-primary">name</button></th>
+                <th><button @onclick="SortByAuthor" class="btn btn-primary">author</button></th>
                 <th><button @onclick="SortByNumRead" class="btn btn-primary">Volumes Read</button></th>
                 <th><button @onclick="SortByNumVolumes" class="btn btn-primary">Number of Total Volumes</button></th>
                 <th>Completion %</th>
@@ -53,24 +56,24 @@ else
             @foreach(var m in mangaL)
             {
                 <tr>
-                    <td>@m.Name</td>
-                    <td>@m.Author</td>
-                    <td>@m.numRead</td>
-                    <td>@m.numVolumes</td>
-                    <td>@MS.CalcCompletion(Int32.Parse(m.numRead), Int32.Parse(m.numVolumes))</td>
-                    <td><button @onclick="() => RemoveManga(m.Name.ToString(), m.Author.ToString())" class="btn btn-primary">Delete</button></td>
+                    <td>@m.name</td>
+                    <td>@m.author</td>
+                    <td>@m.numread</td>
+                    <td>@m.numvolumes</td>
+                    <td>@MS.CalcCompletion(Int32.Parse(m.numread), Int32.Parse(m.numvolumes))</td>
+                    <td><button @onclick="() => RemoveManga(m.name.ToString(), m.author.ToString())" class="btn btn-primary">Delete</button></td>
                     <td><button @onclick="() => UpdateManga(m)" class="btn btn-primary">Edit</button>
-                    @if (m.isUpdateFormVisible)
-                    {
-                        <br>
-                        <EditForm Model="@M" OnValidSubmit="@HandleUpdate">
-                            <InputText placeholder="@m.Name" id="Name" @bind-Value="M.Name" class="form-control form-control-sm"/>
-                            <InputText placeholder="@m.Author" id="Author" @bind-Value="M.Author" class="form-control form-control-sm"/>
-                            <InputText placeholder="@m.numRead" id="numRead" @bind-Value="M.numRead" class="form-control form-control-sm"/>
-                            <InputText placeholder="@m.numVolumes" id="numVolumes" @bind-Value="M.numVolumes" class="form-control form-control-sm"/>
-                            <input type="submit" class="btn btn-primary" value="Update"/>
-                        </EditForm>
-                    }
+                        @if (m.isUpdateFormVisible)
+                        {
+                            <br>
+                            <EditForm Model="@M" OnValidSubmit="@HandleUpdate">
+                                <InputText placeholder="@m.name" id="name" @bind-Value="M.name" class="form-control form-control-sm"/>
+                                <InputText placeholder="@m.author" id="author" @bind-Value="M.author" class="form-control form-control-sm"/>
+                                <InputText placeholder="@m.numread" id="numread" @bind-Value="M.numread" class="form-control form-control-sm"/>
+                                <InputText placeholder="@m.numvolumes" id="numvolumes" @bind-Value="M.numvolumes" class="form-control form-control-sm"/>
+                                <input type="submit" class="btn btn-primary" value="Update"/>
+                            </EditForm>
+                        }
                     </td>
                 </tr>
             }
@@ -80,6 +83,19 @@ else
 }
 
 @code {
+
+    private enum SortType
+    {
+        name,
+        author,
+        NumRead,
+        NumVolumes,
+        None
+    }
+
+    private SortType currentSort = SortType.None;
+
+
     //private readonly IHttpContextAccessor _httpContextAccessor;
     private ILog log = LogManager.GetLogger(typeof(Program));
     private Manga M { get; set; } = new Manga();
@@ -88,6 +104,7 @@ else
     private List<Manga> mangaL;
     private List<Manga> mangaList;
     private string user;
+    private Manga originalManga;
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();  
@@ -117,36 +134,67 @@ else
         StateHasChanged();
         //cry more
     }
-    private void HandleSubmit()
+    private async Task HandleSubmit()
     {
-        log.Info(String.Format("Adding to DB: {0}, {1}, {2}, {3}", M.Name, M.Author, M.numRead, M.numVolumes));
-        MS.AddMangaToDB(M, user);
-        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        log.Info(String.Format("Adding to DB: {0}, {1}, {2}, {3}", M.name, M.author, M.numread, M.numvolumes));
+        await MS.AddMangaToDB(M, user);
+        mangaList = MS.GetManga(user);
+        manga = mangaList.ToArray();
+        mangaL = manga.ToList();
+        IsFormVisible = false;
         AvgCalc();
+        ApplyCurrentSort();
         StateHasChanged();
     }
     private async void RemoveManga(string name, string author){
         log.Warn("Deleting: "+ name);
         await MS.RemoveManga(name, author, user);
-        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        mangaList = MS.GetManga(user);
+        manga = mangaList.ToArray();
+        mangaL = manga.ToList();
         AvgCalc();
+        ApplyCurrentSort();
         StateHasChanged();
     }
     bool isUpdateFormVisible = false;
     private async void UpdateManga(Manga m)
     {
+        originalManga = m;
+        M = new Manga
+        {
+            name = m.name,
+            author = m.author,
+            numread = m.numread,
+            numvolumes = m.numvolumes
+        };
         m.isUpdateFormVisible = true;
         StateHasChanged();
     }
-    private void HandleUpdate()
+    private async Task HandleUpdate()
     {
-        MS.UpdateManga(M, user);
-        log.Info("Finished updating "+ M.Name);
-        uriHelper.NavigateTo(uriHelper.Uri, forceLoad: true);
+        if (string.IsNullOrWhiteSpace(M.name))
+            M.name = originalManga.name;
+        if (string.IsNullOrWhiteSpace(M.author))
+            M.author = originalManga.author;
+        if (string.IsNullOrWhiteSpace(M.numread))
+            M.numread = originalManga.numread;
+        if (string.IsNullOrWhiteSpace(M.numvolumes))
+            M.numvolumes = originalManga.numvolumes;
+
+        await MS.UpdateManga(M, user);
+        originalManga.isUpdateFormVisible = false;
+        originalManga = null;
+        log.Info("Finished updating "+ M.name);
+        mangaList = MS.GetManga(user);
+        manga = mangaList.ToArray();
+        mangaL = manga.ToList();
         AvgCalc();
+        ApplyCurrentSort();
         StateHasChanged();
     }
+
     private string AvgCalc() => MS.AvgCalc();
+
     private void RefreshAvgCalc()
     {
         string result = MS.AvgCalc();
@@ -155,30 +203,59 @@ else
     }
     private void SortByName()
     {
+        currentSort = SortType.name;
         var qc = MS.GetManga(user).AsQueryable();
-        var q = qc.OrderBy(x => x.Name);
+        var q = qc.OrderBy(x => x.name);
         mangaL = q.ToList();
         StateHasChanged();
     }
+
     private void SortByAuthor()
     {
+        currentSort = SortType.author;
         var qc = MS.GetManga(user).AsQueryable();
-        var q = qc.OrderBy(x => x.Author);
+        var q = qc.OrderBy(x => x.author);
         mangaL = q.ToList();
         StateHasChanged();
     }
+
     private void SortByNumVolumes()
     {
+        currentSort = SortType.NumVolumes;
         var qc = MS.GetManga(user).AsQueryable();
-        var q = qc.ToList().OrderBy(x => Int32.Parse(x.numVolumes));
+        var q = qc.ToList().OrderBy(x => Int32.Parse(x.numvolumes));
         mangaL = q.ToList();
         StateHasChanged();
     }
+
     private void SortByNumRead()
     {
+        currentSort = SortType.NumRead;
         var qc = MS.GetManga(user).AsQueryable();
-        var q = qc.ToList().OrderBy(x => Int32.Parse(x.numRead));
+        var q = qc.ToList().OrderBy(x => Int32.Parse(x.numread));
         mangaL = q.ToList();
         StateHasChanged();
+    }
+    private void ApplyCurrentSort()
+    {
+        switch (currentSort)
+        {
+            case SortType.name:
+                SortByName();
+                break;
+            case SortType.author:
+                SortByAuthor();
+                break;
+            case SortType.NumRead:
+                SortByNumRead();
+                break;
+            case SortType.NumVolumes:
+                SortByNumVolumes();
+                break;
+            default:
+                mangaL = mangaList.ToList();
+                StateHasChanged();
+                break;
+        }
     }
 }

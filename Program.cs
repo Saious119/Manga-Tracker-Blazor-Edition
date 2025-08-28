@@ -10,6 +10,7 @@ using log4net;
 using log4net.Core;
 using log4net.Config;
 using MudBlazor.Services;
+using MangaTracker_Temp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,7 @@ XmlConfigurator.Configure(new FileInfo("log4net.config"));
 ILog log = LogManager.GetLogger(typeof(Program));
 
 var config = builder.Configuration;
+builder.Services.AddDbContext<DataContext>();
 
 builder.Services.AddHttpClient();
 
@@ -92,7 +94,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 //    .AddMicrosoftIdentityConsentHandler();
-builder.Services.AddSingleton<IMangaService, MangaService>();
+builder.Services.AddScoped<IMangaService, MangaService>();
 builder.Services.AddSingleton<IDiscordConfigReader, DiscordConfigReader>();
 builder.Services.AddHttpContextAccessor();
 
